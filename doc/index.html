@@ -1,0 +1,154 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PySkein 1.0 - The Skein Hash Algorithm for Python &mdash; PySkein 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PySkein 1.0 documentation" href="#" />
+    <link rel="next" title="Skein hash" href="skein.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="skein.html" title="Skein hash"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pyskein-1-0-the-skein-hash-algorithm-for-python">
+<h1>PySkein 1.0 - The Skein Hash Algorithm for Python<a class="headerlink" href="#pyskein-1-0-the-skein-hash-algorithm-for-python" title="Permalink to this headline">¶</a></h1>
+<p>PySkein is an extension module for Python, implementing the
+<a class="reference external" href="http://www.skein-hash.info">Skein hash algorithm</a>, one of the five finalists of the
+<a class="reference external" href="http://csrc.nist.gov/groups/ST/hash/sha-3/index.html">NIST SHA-3 Competition</a>. While ultimately not selected
+as the winner of that competition, Skein may still be
+useful as an alternative hash algorithm, offering flexible
+hashing modes with various parameters. PySkein provides all
+features of Skein through a Pythonic interface and is released
+as free software under the <a class="reference external" href="http://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License</a>.
+Its highlights are:</p>
+<ul class="simple">
+<li><strong>Simple interface</strong> following the hash algorithms in the
+Python standard library (like <cite>hashlib.sha1</cite> or
+<cite>hashlib.sha256</cite>)</li>
+<li><strong>All features</strong> of the Skein specification
+(flexible digest sizes, MAC generation, tree hashing, and
+various others)</li>
+<li><strong>High performance</strong> through optimized C implementation
+(7.1 cycles/byte for sequential hashing and 4.2 cycles/byte
+for tree hashing on two cores, measured on an Athlon 64 X2)</li>
+<li><strong>Threefish</strong>, the tweakable block cipher used in Skein,
+available for encryption and decryption on its own</li>
+</ul>
+<p>Table of Contents:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="skein.html">Skein hash</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="skein.html#hash-objects">Hash objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="skein.html#examples-of-simple-hashing">Examples of simple hashing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="skein.html#examples-of-input-parameter-usage">Examples of input parameter usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="skein.html#tree-hashing">Tree hashing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="threefish.html">Threefish block cipher</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="threefish.html#threefish-objects">Threefish objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="threefish.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="random.html">Pseudorandom Number Generator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stream.html">Skein Stream Cipher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Demo Scripts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#skeinsum">skeinsum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#threefish">threefish</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download PySkein</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="download.html#skein-versions">Skein versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="download.html#changes-between-version">Changes between version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="download.html#previous-versions">Previous versions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Next topic</h4>
+  <p class="topless"><a href="skein.html"
+                        title="next chapter">Skein hash</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="skein.html" title="Skein hash"
+             >next</a> |</li>
+        <li><a href="#">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2008-2013 Hagen Fürstenau.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

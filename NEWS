@@ -1,0 +1,146 @@
+Release history and non-trivial changes:
+
+PySkein 1.0 (2013-08-02)
+------------------------
+    - Removed deprecated alias 'mac' for parameter 'key'
+
+    - Added method Random.getrandbits, enabling arbitrarily large
+      random number in Random.randrange  (proposed by Aaron Gallagher)
+
+    - Dropped support for Python 3.0
+
+
+PySkein 0.7.1 (2012-04-02)
+--------------------------
+    - Allowed start == stop in digest(start, stop). As a consequence,
+      StreamCipher.encrypt() now doesn't complain about empty byte objects.
+
+    - Added method StreamCipher.keystream()  (proposed by Roy Kipp)
+
+    - Fixed small bug where StreamCipher.encrypt() would advance the key stream
+      even when raising an exception
+
+    - Fixed a bug in digest(a, b), i.e. the optimization of digest()[a:b],
+      where the last byte could be wrong when digest_size was large. This also
+      affected the last byte of the output of StreamCipher.encrypt()!
+
+    - Added script 'skein-random', an efficient alternative to /dev/urandom
+
+    - Added RandomBytes class as a low-level PRNG interface
+
+
+PySkein 0.7 (2010-12-23)
+------------------------
+    - Update to Skein Version 1.3 (tweak of key schedule constant)
+
+    - Added the last two missing input parameters: 'public_key' and 'key_id'
+
+    - Renamed 'mac' parameter to 'key', kept 'mac' as deprecated alias
+
+    - Made keyword-only usage in skein*() mandatory
+
+    - Extended digest() so that it can return slices of the digest
+
+    - Increased digest_bits limit to 2**64-1 according to specification
+
+    - Added StreamCipher
+
+    - Revised PRNG to follow the specification more closely
+
+
+PySkein 0.6.3 (2010-10-01)
+--------------------------
+    - Fixed tests to work with Python 3.2
+
+    - Sped up generation of long digests
+
+    - Allowed digest sizes of any number of bits (not only complete bytes)
+
+    - Allowed message sizes of any number of bits (not only complete bytes)
+      by introducing keyword argument 'bits' in update().
+
+    - Added attribute "hashed_bits" to skein objects
+
+
+PySkein 0.6.2 (2010-08-16)
+--------------------------
+    - Implemented second thread in tree hashing, using two cores on multi-core
+      machines. This can improve hashing performance by more than 50%.
+
+    - Included files to make re-building the docs work again
+
+
+PySkein 0.6.1 (2010-06-07)
+--------------------------
+    - Fixed a bug in copy()ing tree hash objects
+
+    - Made hash objects picklable
+
+    - Improved repr() of hash objects
+
+    - Fixed several issues with Python 3.0
+
+
+PySkein 0.6 (2010-05-14)
+------------------------
+    - Incremental tree hashing with arbitrary tree parameters
+
+    - Restricted digest_bits to < 2^31 bits (256 MB!)
+
+    - Disabled precomputed IVs (their performance benefit is negligible)
+
+    - Deprecated all non-keyword arguments of skein*() functions
+      except 'init' and 'digest_bits'
+
+
+PySkein 0.5.2 (2010-03-25)
+--------------------------
+    - Release the GIL to allow multiple threads to hash in parallel
+      on multi-core systems
+
+
+PySkein 0.5.1 (2010-02-18)
+--------------------------
+    - Fixed reference leak when changing tweak value on threefish object
+
+
+PySkein 0.5 (2009-09-25)
+------------------------
+    - Updated rotation constants to new Skein specification (version 1.2)
+
+    - Added implementation of Skein PRNG
+
+
+PySkein 0.4 (2009-08-23)
+------------------------
+    - Hashing with personalization string
+
+    - Hashing with nonce value
+
+
+PySkein 0.3.1 (2009-08-13)
+--------------------------
+    - Improved demo script "threefish"
+
+    - Better compatibility with Python 3.1
+
+
+PySkein 0.3 (2009-01-05)
+------------------------
+    - Threefish block decryption
+
+    - Demo scripts "skeinsum" and "threefish"
+
+
+PySkein 0.2 (2008-12-04)
+------------------------
+    - Support for message authentication codes
+
+    - Threefish block encryption (but no decryption)
+
+    - Fixed one or two reference leaks
+
+
+PySkein 0.1 (2008-11-22)
+------------------------
+    - Skein-256, Skein-512, and Skein-1024 hashing

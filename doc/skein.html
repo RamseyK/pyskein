@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Skein hash &mdash; PySkein 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PySkein 1.0 documentation" href="index.html" />
+    <link rel="next" title="Threefish block cipher" href="threefish.html" />
+    <link rel="prev" title="PySkein 1.0 - The Skein Hash Algorithm for Python" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="threefish.html" title="Threefish block cipher"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="PySkein 1.0 - The Skein Hash Algorithm for Python"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="skein-hash">
+<h1>Skein hash<a class="headerlink" href="#skein-hash" title="Permalink to this headline">¶</a></h1>
+<p>A new hash object is created by one of the following three functions:</p>
+<dl class="function">
+<dt id="skein.skein256">
+<tt class="descclassname">skein.</tt><tt class="descname">skein256</tt><big>(</big><em>init=b''</em>, <em>digest_bits=256</em>, <em>**params</em><big>)</big><a class="headerlink" href="#skein.skein256" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="skein.skein512">
+<tt class="descclassname">skein.</tt><tt class="descname">skein512</tt><big>(</big><em>init=b''</em>, <em>digest_bits=512</em>, <em>**params</em><big>)</big><a class="headerlink" href="#skein.skein512" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="skein.skein1024">
+<tt class="descclassname">skein.</tt><tt class="descname">skein1024</tt><big>(</big><em>init=b''</em>, <em>digest_bits=1024</em>, <em>**params</em><big>)</big><a class="headerlink" href="#skein.skein1024" title="Permalink to this definition">¶</a></dt>
+<dd><p>These constructor functions return a corresponding hash object
+for Skein-256, Skein-512, or Skein-1024 (i.e. 256, 512, or 1024 bits
+internal state).  They optionally take an initial chunk of data to hash
+(<cite>init</cite>) and the desired digest length in bits (<cite>digest_bits</cite>,
+must be &lt; 2**31).</p>
+<p>Further optional (keyword-only) parameters are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>key</cite>: private key, arbitrary bytes</li>
+<li><cite>pers</cite>: personalization string, arbitrary bytes</li>
+<li><cite>public_key</cite>: public key, arbitrary bytes</li>
+<li><cite>key_id</cite>: key identifier, arbitrary bytes</li>
+<li><cite>nonce</cite>: nonce value, arbitrary bytes</li>
+<li><cite>tree</cite>: tree hashing parameters, a tuple (leaf, fan_out, max_height)</li>
+</ul>
+</div></blockquote>
+<p>For details about the meaning of these parameters, please consult the
+<a class="reference external" href="http://www.skein-hash.info/sites/default/files/skein1.3.pdf">Skein specification</a>.</p>
+</dd></dl>
+
+<div class="section" id="hash-objects">
+<h2>Hash objects<a class="headerlink" href="#hash-objects" title="Permalink to this headline">¶</a></h2>
+<p>Hash objects have the following methods:</p>
+<dl class="method">
+<dt id="hash.update">
+<tt class="descclassname">hash.</tt><tt class="descname">update</tt><big>(</big><em>message</em>, <em>bits=None</em><big>)</big><a class="headerlink" href="#hash.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hash the given <cite>message</cite> (of type bytes) into the internal state.  (Strings
+have to be encoded to bytes first.) Repeated calls are equivalent
+to a single call with the concatenation of all the arguments.</p>
+<p>If given, the argument <cite>bits</cite> has to be <tt class="docutils literal"><span class="pre">&lt;=8*len(message)</span></tt> and specifies
+how many bits of the message are hashed. Specifically, the first <tt class="docutils literal"><span class="pre">bits//8</span></tt>
+full bytes and the <tt class="docutils literal"><span class="pre">bits%8</span></tt> most significant bits of the following byte
+are hashed. If omitted, <cite>bits</cite> defaults to <tt class="docutils literal"><span class="pre">8*len(message)</span></tt>.</p>
+<p><em>Caveat:</em> If the number of hashed bits so far is not a multiple of 8, then
+<cite>bits</cite> must be specified with a value of at most <tt class="docutils literal"><span class="pre">8-hashed_bits%8</span></tt>.
+Otherwise a <tt class="docutils literal"><span class="pre">ValueError</span></tt> will be raised. This ensures proper byte
+alignment of subsequent hashing operations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hash.digest">
+<tt class="descclassname">hash.</tt><tt class="descname">digest</tt><big>(</big><span class="optional">[</span><em>start</em>, <em>stop</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#hash.digest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the digest of all data processed so far. Usually, <cite>start</cite> and <cite>stop</cite>
+are omitted, and this is a bytes object of length <a class="reference internal" href="#hash.digest_size" title="hash.digest_size"><tt class="xref py py-attr docutils literal"><span class="pre">digest_size</span></tt></a>.</p>
+<p>If <cite>start</cite> and <cite>stop</cite> are specified, the result is the same as that of
+<tt class="docutils literal"><span class="pre">digest()[start:stop]</span></tt>, but computed much more efficiently for small
+slices of large digests. This is useful, e.g., for turning Skein into a
+stream cipher.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hash.hexdigest">
+<tt class="descclassname">hash.</tt><tt class="descname">hexdigest</tt><big>(</big><big>)</big><a class="headerlink" href="#hash.hexdigest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <a class="reference internal" href="#hash.digest" title="hash.digest"><tt class="xref py py-meth docutils literal"><span class="pre">digest()</span></tt></a>, but returning the digest as a string
+of hexadecimal digits.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="hash.copy">
+<tt class="descclassname">hash.</tt><tt class="descname">copy</tt><big>(</big><big>)</big><a class="headerlink" href="#hash.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a clone of the hash object, e.g. to efficiently compute hashes of
+data sharing a common prefix.</p>
+</dd></dl>
+
+<p>In addition each hash object has the following attributes:</p>
+<dl class="attribute">
+<dt id="hash.name">
+<tt class="descclassname">hash.</tt><tt class="descname">name</tt><a class="headerlink" href="#hash.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the algorithm, i.e. <tt class="docutils literal"><span class="pre">'Skein-256'</span></tt>, <tt class="docutils literal"><span class="pre">'Skein-512'</span></tt>, or
+<tt class="docutils literal"><span class="pre">'Skein-1024'</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hash.block_bits">
+<tt class="descclassname">hash.</tt><tt class="descname">block_bits</tt><a class="headerlink" href="#hash.block_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Internal state size in bits, i.e. <tt class="docutils literal"><span class="pre">256</span></tt>, <tt class="docutils literal"><span class="pre">512</span></tt>, or <tt class="docutils literal"><span class="pre">1024</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hash.block_size">
+<tt class="descclassname">hash.</tt><tt class="descname">block_size</tt><a class="headerlink" href="#hash.block_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Internal state size in bytes (conforming to <tt class="xref py py-mod docutils literal"><span class="pre">hashlib</span></tt>),
+i.e. <tt class="docutils literal"><span class="pre">32</span></tt>, <tt class="docutils literal"><span class="pre">64</span></tt>, or <tt class="docutils literal"><span class="pre">128</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hash.digest_bits">
+<tt class="descclassname">hash.</tt><tt class="descname">digest_bits</tt><a class="headerlink" href="#hash.digest_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Output digest length in bits, i.e. the value given to the constructor
+function (or default).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hash.digest_size">
+<tt class="descclassname">hash.</tt><tt class="descname">digest_size</tt><a class="headerlink" href="#hash.digest_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Digest size in bytes (rounded up).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hash.hashed_bits">
+<tt class="descclassname">hash.</tt><tt class="descname">hashed_bits</tt><a class="headerlink" href="#hash.hashed_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of message bits hashed so far.</p>
+</dd></dl>
+
+<p><em>Note:</em> Hash objects are picklable, but the pickled data exposes a buffer
+with up to one block of still unhashed data.</p>
+</div>
+<div class="section" id="examples-of-simple-hashing">
+<h2>Examples of simple hashing<a class="headerlink" href="#examples-of-simple-hashing" title="Permalink to this headline">¶</a></h2>
+<p>Make a Skein-512 hash object with default digest length (512 bits)
+and hash some data:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">skein</span> <span class="kn">import</span> <span class="n">skein256</span><span class="p">,</span> <span class="n">skein512</span><span class="p">,</span> <span class="n">skein1024</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span> <span class="o">=</span> <span class="n">skein512</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;Nobody inspects&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">b</span><span class="s">&#39; the spammish repetition&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+<span class="go">b&#39;\x1bN\x03+\xcb\x1d\xa4Rs\x01\x1c\xa9Ee\xef\x10|f+\x0b\xd3\r[5\xfbS5Ko\xced#\xa5\xeb\x10\xda\xe6\xf3v\xd6\xb2JNQ}\x85\xc7&amp;\xfc\x01\xfb\x87J\x8f\xe2m\xe9Y\x1f\xa5\x9f\xa3\xc7\xd4&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">digest_size</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">digest_bits</span>
+<span class="go">(64, 512)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">block_bits</span>
+<span class="go">(64, 512)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">hashed_bits</span>
+<span class="go">312</span>
+</pre></div>
+</div>
+<p>Similarly for Skein-1024-384:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h</span> <span class="o">=</span> <span class="n">skein1024</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;Nobody inspects the spammish repetition&#39;</span><span class="p">,</span> <span class="n">digest_bits</span><span class="o">=</span><span class="mi">384</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;b602b02c5e02ecb37361b17dd4da33bb41c49ff685dca0408048a425fe3dee8bfbaf6c42575e9d71d89eb0dd2ec2a2a8&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">digest_size</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">digest_bits</span>
+<span class="go">(48, 384)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">block_bits</span>
+<span class="go">(128, 1024)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">hashed_bits</span>
+<span class="go">312</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="examples-of-input-parameter-usage">
+<h2>Examples of input parameter usage<a class="headerlink" href="#examples-of-input-parameter-usage" title="Permalink to this headline">¶</a></h2>
+<p>To generate a message authentication code (MAC), use the <cite>key</cite> input:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">skein256</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;secret&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;aee7b931f0e5e134b7af4ac1a7958f5c5f5f7e20dd68cfeab474c0aae0290de7&#39;</span>
+</pre></div>
+</div>
+<p>You may specify a personalization string for personalized hashing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">skein256</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="n">pers</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;20100101 me@example.com&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;00c4f6aa109902e8db81d4c9324d2980265adcda583090aa894447511ca5f773&#39;</span>
+</pre></div>
+</div>
+<p>Similarly, a nonce may be specified for randomized hashing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">skein256</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="n">nonce</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;foobar&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;e01f8f8d57521f28d08390be94da96390177eff11932eaa59e2976686ac4a280&#39;</span>
+</pre></div>
+</div>
+<p>For digital signatures, the public key may be hashed into the digest:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">skein256</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="n">public_key</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;mypubkey&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;81a3a49606da1acf1a1ab3324e7ca170f310d905f8fabcff096d4ddf12aeef10&#39;</span>
+</pre></div>
+</div>
+<p>Finally, to use Skein as a key derivation function (KDF), you may specify the
+master key as <cite>key</cite> and the key identifier as <cite>key_id</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">skein256</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;mastersecret&#39;</span><span class="p">,</span> <span class="n">key_id</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;email&#39;</span><span class="p">,</span> <span class="n">digest_bits</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;c3ad501b1abfcf25bd1bdc4ef4053348&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="tree-hashing">
+<h2>Tree hashing<a class="headerlink" href="#tree-hashing" title="Permalink to this headline">¶</a></h2>
+<p>Tree hashing uses the same incremental interface as sequential hashing. To hash
+with a leaf size of 2**L blocks, a fan-out of 2**F children per node and a
+maximum tree height of M, simply specify a <cite>tree</cite> parameter of (L, F, M):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">h</span> <span class="o">=</span> <span class="n">skein256</span><span class="p">(</span><span class="n">tree</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">h</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\0</span><span class="s">&#39;</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;foobar&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">h</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+<span class="go">&#39;3d5bea7b8e2ffdaef60ce9d68b1db7cb4549a6bb52b3801eda640623cbeca5bd&#39;</span>
+</pre></div>
+</div>
+<p>In tree hashing mode, PySkein will use two threads to speed up hashing on
+multi-core systems. Note that the digests produced in tree hashing differ from
+those produced in sequential hashing, and also depend on the <cite>tree</cite> parameter.
+If you are not restricted by interoperability issues, you can try different
+leaf sizes to find the value leading to optimal performance on your machine.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Skein hash</a><ul>
+<li><a class="reference internal" href="#hash-objects">Hash objects</a></li>
+<li><a class="reference internal" href="#examples-of-simple-hashing">Examples of simple hashing</a></li>
+<li><a class="reference internal" href="#examples-of-input-parameter-usage">Examples of input parameter usage</a></li>
+<li><a class="reference internal" href="#tree-hashing">Tree hashing</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">PySkein 1.0 - The Skein Hash Algorithm for Python</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="threefish.html"
+                        title="next chapter">Threefish block cipher</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/skein.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="threefish.html" title="Threefish block cipher"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="PySkein 1.0 - The Skein Hash Algorithm for Python"
+             >previous</a> |</li>
+        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2008-2013 Hagen Fürstenau.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

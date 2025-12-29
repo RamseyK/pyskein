@@ -1,0 +1,40 @@
+PySkein 1.0
+===========
+
+This file only covers some basic installation instructions. For any further
+information please consult the docs, starting with "doc/index.html".
+
+
+Installation
+------------
+
+Notes:
+    * You need Python 3.1 or later to run PySkein!
+
+    * If you have a version of PySkein <0.5 installed, please make sure to
+      manually delete "skein.*" from your Python site-packages directory before
+      installing a more recent version!
+
+    * Earlier versions of PySkein may implement different versions of the
+      Skein algorithm and so produce different hash outputs.
+      Check doc/download.html for an overview of which version of PySkein
+      corresponds to which version of the Skein specification.
+
+To build and install globally run (with appropriate permissions):
+
+$ python3 setup.py install
+
+To install locally into your home directory run:
+
+$ python3 setup.py install --user
+
+The setup script will also install the two demo scripts "skeinsum" and
+"threefish" into a corresponding location.
+
+
+Copyright and License Information
+---------------------------------
+
+Copyright 2008-2013 Hagen Fürstenau
+Both the software and the documentation are licensed under GPL version 3.
+For the license text see the file "COPYING".

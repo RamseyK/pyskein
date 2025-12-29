@@ -1,0 +1,82 @@
+#!/usr/local/bin/python3
+
+#   skein-random
+#   Copyright 2011 Hagen Fürstenau <hagen@zhuliguan.net>
+#
+#   Writes a stream of pseudo-random bytes (seeded from /dev/random) to stdout
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+import sys, os, fcntl
+from time import sleep
+from skein import RandomBytes
+
+DEV_RANDOM = "/dev/random"  # source of true random bytes
+
+
+def write_srandom(random, *, f=sys.stdout.buffer, chunk_size=2**20,
+                  verbose=False):
+    """Write pseudo-random bytes to 'f'
+
+    Between chunks of 'chunk_size' bytes, reseeding is performed with bytes
+    read from 'random' (assumed non-blocking).
+    """
+    def out(s):
+        if verbose:
+            print(s, file=sys.stderr)
+
+    state_size = RandomBytes(b"").state_size
+
+    # initial seeding
+    out("waiting for {} random bytes... ".format(state_size) +
+        "(move the mouse to speed this up)")
+    seed = b""
+    while 1:
+        r = random.read(state_size-len(seed))
+        if r is not None:
+            seed += r
+        if len(seed) == state_size:
+            break
+        sleep(1)
+    rb = RandomBytes(seed)
+    out("finished seeding, starting pseudo-random stream")
+
+    # write chunks and re-seed
+    while 1:
+        data = rb.read(chunk_size)
+        try:
+            f.write(data)
+        except IOError as e:
+            # simply terminate on broken pipe
+            if e.errno == 32:
+                break
+            else:
+                raise
+
+        # re-seed with as much random data as we can get
+        r = random.read(state_size)
+        if r is not None:
+            out("reseeding with {} random bytes".format(len(r)))
+            rb.seed(r)
+
+
+if __name__ == "__main__":
+    verbose = (sys.argv[1:] == ["-v"])
+    try:
+        with open(DEV_RANDOM, "rb", buffering=0) as random:
+            fcntl.fcntl(random.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
+            write_srandom(random, verbose=verbose)
+    except KeyboardInterrupt:
+        pass

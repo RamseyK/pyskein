@@ -1,0 +1,301 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Download PySkein &mdash; PySkein 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PySkein 1.0 documentation" href="index.html" />
+    <link rel="prev" title="Demo Scripts" href="scripts.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="scripts.html" title="Demo Scripts"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="download-pyskein">
+<h1>Download PySkein<a class="headerlink" href="#download-pyskein" title="Permalink to this headline">¶</a></h1>
+<p>PySkein runs with Python 3.1 or higher. It was mainly tested on 64-bit Linux,
+but should run on various platforms supported by Python. Due to the design of
+the Skein algorithm, performance is significantly lower on 32-bit systems.</p>
+<p>Download the most recent version 1.0:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>Source code:</strong> <a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-1.0.tar.gz">pyskein-1.0.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-1.0.tar.gz.asc">sig</a>)</li>
+<li><strong>Windows installer (for Python 3.3):</strong> <a class="reference external" href="http://pypi.python.org/packages/3.3/p/pyskein/pyskein-1.0.win32-py3.3.msi">pyskein-1.0.win32-py3.3.msi</a> (<a class="reference external" href="http://pypi.python.org/packages/3.3/p/pyskein/pyskein-1.0.win32-py3.3.msi.asc">sig</a>)</li>
+</ul>
+</div></blockquote>
+<p>Note: If you have a version of PySkein &lt;0.5 installed, please make sure to
+manually delete &#8220;skein.*&#8221; from your Python <cite>site-packages</cite> directory before
+installing a more recent version.</p>
+<div class="section" id="skein-versions">
+<h2>Skein versions<a class="headerlink" href="#skein-versions" title="Permalink to this headline">¶</a></h2>
+<p>Older versions of PySkein may implement previous versions of the Skein
+specification and therefore produce different hashing outputs.  The following
+table shows which version of PySkein corresponds to which version of the
+specification:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="36%" />
+<col width="47%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>PySkein</strong></th>
+<th class="head"><strong>Skein specification</strong></th>
+<th class="head"><strong>Change</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>since 0.7</td>
+<td>1.3</td>
+<td>new key schedule constant</td>
+</tr>
+<tr class="row-odd"><td>0.5&nbsp;-&nbsp;0.6.3</td>
+<td>1.2</td>
+<td>new rotation constants</td>
+</tr>
+<tr class="row-even"><td>0.1&nbsp;- 0.4</td>
+<td>1.1</td>
+<td>corrected config string length</td>
+</tr>
+</tbody>
+</table>
+<p>Version 1.0 of the Skein specification contained an <a class="reference external" href="http://www.schneier.com/blog/archives/2008/10/the_skein_hash.html#c323538">error</a>
+in the reference implementation and test vectors, and was never implemented in
+any release of PySkein.</p>
+</div>
+<div class="section" id="changes-between-version">
+<h2>Changes between version<a class="headerlink" href="#changes-between-version" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>1.0</dt>
+<dd><ul class="first last simple">
+<li>Removed deprecated alias &#8216;mac&#8217; for parameter &#8216;key&#8217;</li>
+<li>Added method Random.getrandbits, enabling arbitrarily large
+random number in Random.randrange  (proposed by Aaron Gallagher)</li>
+<li>Dropped support for Python 3.0</li>
+</ul>
+</dd>
+<dt>0.7.1</dt>
+<dd><ul class="first last simple">
+<li>Fixed a bug in digest(a, b), i.e. the optimization of digest()[a:b],
+where the last byte could be wrong when digest_size was large. This also
+affected the last byte of the output of StreamCipher.encrypt()!</li>
+<li>Added RandomBytes class as a low-level PRNG interface</li>
+<li>Added script &#8216;skein-random&#8217;, an efficient alternative to /dev/urandom</li>
+<li>Fixed small bug where StreamCipher.encrypt() would advance the key stream
+even when raising an exception</li>
+<li>Added method StreamCipher.keystream()  (proposed by Roy Kipp)</li>
+<li>Allowed start == stop in digest(start, stop). As a consequence,
+StreamCipher.encrypt() now doesn&#8217;t complain about empty byte objects.</li>
+</ul>
+</dd>
+<dt>0.7</dt>
+<dd><ul class="first last simple">
+<li>Update to Skein Version 1.3 (tweak of key schedule constant)</li>
+<li>Added the last two missing input parameters: &#8216;public_key&#8217; and &#8216;key_id&#8217;</li>
+<li>Renamed &#8216;mac&#8217; parameter to &#8216;key&#8217;, kept &#8216;mac&#8217; as deprecated alias</li>
+<li>Made keyword-only usage in skein*() mandatory</li>
+<li>Extended digest() so that it can return slices of the digest</li>
+<li>Increased digest_bits limit to 2**64-1 according to specification</li>
+<li>Added StreamCipher</li>
+<li>Revised PRNG to follow the specification more closely</li>
+</ul>
+</dd>
+<dt>0.6.3</dt>
+<dd><ul class="first last simple">
+<li>Fixed tests to work with Python 3.2</li>
+<li>Sped up generation of long digests</li>
+<li>Allowed digest sizes of any number of bits (not only complete bytes)</li>
+<li>Allowed message sizes of any number of bits (not only complete bytes)
+by introducing keyword argument &#8216;bits&#8217; in update().</li>
+<li>Added attribute &#8220;hashed_bits&#8221; to skein objects</li>
+</ul>
+</dd>
+<dt>0.6.2</dt>
+<dd><ul class="first last simple">
+<li>Implemented second thread in tree hashing, using two cores on multi-core
+machines. This can improve hashing performance by more than 50%.</li>
+<li>Included files to make re-building the docs work again</li>
+</ul>
+</dd>
+<dt>0.6.1</dt>
+<dd><ul class="first last simple">
+<li>Fixed a bug in copy()ing tree hash objects</li>
+<li>Made hash objects picklable</li>
+<li>Improved repr() of hash objects</li>
+<li>Fixed several issues with Python 3.0</li>
+</ul>
+</dd>
+<dt>0.6</dt>
+<dd><ul class="first last simple">
+<li>Incremental tree hashing with arbitrary tree parameters</li>
+<li>Restricted digest_bits to &lt; 2^31 bits (256 MB!)</li>
+<li>Disabled precomputed IVs (their performance benefit is negligible)</li>
+<li>Deprecated all non-keyword arguments of skein*() functions
+except &#8216;init&#8217; and &#8216;digest_bits&#8217;</li>
+</ul>
+</dd>
+<dt>0.5.2</dt>
+<dd><ul class="first last simple">
+<li>Release the GIL to allow multiple threads to hash in parallel
+on multi-core systems</li>
+</ul>
+</dd>
+<dt>0.5.1</dt>
+<dd><ul class="first last simple">
+<li>Fixed reference leak when changing tweak value on threefish object</li>
+</ul>
+</dd>
+<dt>0.5</dt>
+<dd><ul class="first last simple">
+<li>Updated rotation constants to new Skein specification (version 1.2)</li>
+<li>Added implementation of Skein PRNG</li>
+</ul>
+</dd>
+<dt>0.4</dt>
+<dd><ul class="first last simple">
+<li>Hashing with personalization string</li>
+<li>Hashing with nonce value</li>
+</ul>
+</dd>
+<dt>0.3.1</dt>
+<dd><ul class="first last simple">
+<li>Improved demo script &#8220;threefish&#8221;</li>
+<li>Better compatibility with Python 3.1</li>
+</ul>
+</dd>
+<dt>0.3</dt>
+<dd><ul class="first last simple">
+<li>Threefish block decryption</li>
+<li>Demo scripts &#8220;skeinsum&#8221; and &#8220;threefish&#8221;</li>
+</ul>
+</dd>
+<dt>0.2</dt>
+<dd><ul class="first last simple">
+<li>Support for message authentication codes</li>
+<li>Threefish block encryption (but no decryption)</li>
+<li>Fixed one or two reference leaks</li>
+</ul>
+</dd>
+<dt>0.1</dt>
+<dd><ul class="first last simple">
+<li>Skein-256, Skein-512, and Skein-1024 hashing</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="previous-versions">
+<h2>Previous versions<a class="headerlink" href="#previous-versions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.1.tar.gz">pyskein-0.7.1.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.1.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.tar.gz">pyskein-0.7.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.3.tar.gz">pyskein-0.6.3.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.3.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.2.tar.gz">pyskein-0.6.2.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.2.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.1.tar.gz">pyskein-0.6.1.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.1.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.tar.gz">pyskein-0.6.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.2.tar.gz">pyskein-0.5.2.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.2.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.1.tar.gz">pyskein-0.5.1.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.1.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.tar.gz">pyskein-0.5.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.4.tar.gz">pyskein-0.4.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.4.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.1.tar.gz">pyskein-0.3.1.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.1.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.tar.gz">pyskein-0.3.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.2.tar.gz">pyskein-0.2.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.2.tar.gz.asc">sig</a>)</li>
+<li><a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.1.tar.gz">pyskein-0.1.tar.gz</a> (<a class="reference external" href="http://pypi.python.org/packages/source/p/pyskein/pyskein-0.1.tar.gz.asc">sig</a>)</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Download PySkein</a><ul>
+<li><a class="reference internal" href="#skein-versions">Skein versions</a></li>
+<li><a class="reference internal" href="#changes-between-version">Changes between version</a></li>
+<li><a class="reference internal" href="#previous-versions">Previous versions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="scripts.html"
+                        title="previous chapter">Demo Scripts</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/download.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="scripts.html" title="Demo Scripts"
+             >previous</a> |</li>
+        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2008-2013 Hagen Fürstenau.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

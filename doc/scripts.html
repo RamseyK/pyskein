@@ -1,0 +1,168 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Demo Scripts &mdash; PySkein 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PySkein 1.0 documentation" href="index.html" />
+    <link rel="next" title="Download PySkein" href="download.html" />
+    <link rel="prev" title="Skein Stream Cipher" href="stream.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="download.html" title="Download PySkein"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="stream.html" title="Skein Stream Cipher"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="demo-scripts">
+<h1>Demo Scripts<a class="headerlink" href="#demo-scripts" title="Permalink to this headline">¶</a></h1>
+<p>There are two Python scripts included in the distribution which demonstrate
+Skein hashing and Threefish encryption with PySkein.
+Please note that both scripts are written for demonstration
+of the functionality of PySkein only. I do not claim that they are
+secure or fit for any other purpose.</p>
+<div class="section" id="skeinsum">
+<h2>skeinsum<a class="headerlink" href="#skeinsum" title="Permalink to this headline">¶</a></h2>
+<p>This script does its best to mimic the behaviour of the well known tools
+<cite>md5sum</cite>, <cite>sha1sum</cite> or <cite>sha256sum</cite>.  It hashes all specified files with
+Skein-512-256 and prints the resulting hexdigest.</p>
+<div class="highlight-python"><pre>$ skeinsum COPYING
+63fb45390c188b7ba0e8eb2ed0e2fefa8416da515f0b28e670345ecd0de673dc  COPYING</pre>
+</div>
+</div>
+<div class="section" id="threefish">
+<h2>threefish<a class="headerlink" href="#threefish" title="Permalink to this headline">¶</a></h2>
+<p>With this script you can try out file encryption and decryption with
+Threefish in a variant of tweak block chaining mode. This mode is designed
+for tweakable block ciphers, using an encrypted block as tweak value for the
+encryption of the next block.</p>
+<p>Since Threefish has a block size of 32, 64 or 128 bytes and a tweak size of
+16 bytes, tweak block chaining cannot be implemented without modification.
+The script runs Threefish with a block size of 32 bytes and uses the first
+16 bytes of an encrypted block as tweak value for the next encryption.
+A random initial tweak value is used (and saved together with the encrypted
+file).</p>
+<p>To encrypt the last block of the file, random bytes are appended to pad it
+to the block size of 32 bytes. The original length of the block is then
+encoded in the 5 least significant bits of the last byte of the block.</p>
+<p>Note that there is no obvious way to verify whether the key used for
+decryption is correct or not. Decryption will always succeed and produce
+garbage in the case of a wrong key. This is good enough for demonstration
+purposes (and may even be desired in some circumstances) and could trivially
+be changed by using checksums anyway.</p>
+<p>The 256 bit key value is derived by hashing the password entered at the command
+line with Skein-512-256.</p>
+<div class="highlight-python"><pre>$ threefish encrypt README
+Password:
+$ ls README*
+README  README.3f
+$ mv README README.orig
+$ threefish decrypt README.3f
+Password:
+$ diff README README.orig
+$</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Demo Scripts</a><ul>
+<li><a class="reference internal" href="#skeinsum">skeinsum</a></li>
+<li><a class="reference internal" href="#threefish">threefish</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="stream.html"
+                        title="previous chapter">Skein Stream Cipher</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="download.html"
+                        title="next chapter">Download PySkein</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/scripts.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="download.html" title="Download PySkein"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="stream.html" title="Skein Stream Cipher"
+             >previous</a> |</li>
+        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2008-2013 Hagen Fürstenau.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
