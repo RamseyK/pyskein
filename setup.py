@@ -19,8 +19,8 @@ except IOError:
 
 
 ext = Extension("_skein",
-                sources=["src/threefish.c", "src/_skeinmodule.c"],
-                include_dirs=["src"])
+                sources=["pyskein/threefish.c", "pyskein/_skeinmodule.c"],
+                include_dirs=["pyskein"])
 
 setup(name="pyskein",
       version="1.0",
@@ -42,7 +42,7 @@ setup(name="pyskein",
           "Programming Language :: Python :: 3.2",
           "Programming Language :: Python :: 3.3",
           "Topic :: Security :: Cryptography"],
-      package_dir={"": "src"},
+      package_dir={"": "pyskein"},
       py_modules=["skein"],
       ext_modules=[ext],
-      scripts=["scripts/skeinsum"])
+      scripts=["pyskein/scripts/skeinsum.py"])
