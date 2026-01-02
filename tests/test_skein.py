@@ -4,7 +4,6 @@ import pathlib
 import random
 import functools
 import unittest
-import warnings
 import pickle
 from itertools import combinations, chain
 from binascii import unhexlify
@@ -16,7 +15,7 @@ KATFILE = str(pathlib.Path(__file__).parent / "skein_golden_kat.txt")
 
 class TestSkeinModule(unittest.TestCase):
     def test(self):
-        self.assertEqual(type(skein.__version__), str)
+        self.assertEqual(skein.StreamCipher.DIGEST_BITS, 2 ** 64 - 1)
         self.assertTrue(type(skein.skein256())
                      is type(skein.skein512())
                      is type(skein.skein1024()))
