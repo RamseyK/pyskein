@@ -1,6 +1,10 @@
 *.DS_Store
-*.pyc
 .idea/
 
+# Python
+*.pyc
+*.egg-info
+
+# Binaries
 *.o
 *.so
