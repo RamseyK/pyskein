@@ -72,7 +72,7 @@ def write_srandom(random, *, f=sys.stdout.buffer, chunk_size=2**20,
             rb.seed(r)
 
 
-if __name__ == "__main__":
+def main():
     verbose = (sys.argv[1:] == ["-v"])
     try:
         with open(DEV_RANDOM, "rb", buffering=0) as random:
@@ -80,3 +80,8 @@ if __name__ == "__main__":
             write_srandom(random, verbose=verbose)
     except KeyboardInterrupt:
         pass
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -256,7 +256,6 @@ hash_bytes(skeinObject *sk, const u08b_t *msg, size_t msgByteCnt)
     return 1;
 }
 
-
 struct args_t {
     processor_t basic_processor;
     skein_state_t *state;

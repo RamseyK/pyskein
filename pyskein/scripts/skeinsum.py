@@ -44,14 +44,19 @@ def printsum(f, name):
             raise
 
 
-if len(sys.argv) < 2:
-    printsum(sys.stdin.buffer, "-")
-else:
-    for filename in sys.argv[1:]:
-        if os.path.isdir(filename):
-            print("skeinsum: {0}: is a directory".format(filename),
-                  file=sys.stderr)
-            continue
-        with open(filename, "rb") as f:
-            printsum(f, filename)
+def main()
+    if len(sys.argv) < 2:
+        printsum(sys.stdin.buffer, "-")
+    else:
+        for filename in sys.argv[1:]:
+            if os.path.isdir(filename):
+                print("skeinsum: {0}: is a directory".format(filename),
+                      file=sys.stderr)
+                continue
+            with open(filename, "rb") as f:
+                printsum(f, filename)
+    return 0
 
+
+if __name__ == "__main__":
+    sys.exit(main())

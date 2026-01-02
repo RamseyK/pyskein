@@ -110,7 +110,7 @@ def decrypt_file(inf, outf, key):
     outf.write(block[:i])
 
 
-if __name__ == "__main__":
+def main():
     encrypt, infn, outfn = get_args(sys.argv)
     password = getpass().encode("utf-8")
     key = skein512(password, digest_bits=BLOCK_SIZE*8).digest()
@@ -123,4 +123,9 @@ if __name__ == "__main__":
                     decrypt_file(inf, outf, key)
                 except DecryptError:
                     print("unexpected end of encrypted data", file=sys.stderr)
-                    sys.exit(1)
+                    return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
