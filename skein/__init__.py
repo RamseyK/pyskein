@@ -71,7 +71,7 @@ class Random(random.Random):
         if len(self._buffer) < n:
             chunks = [self._buffer]
             blocks = ((n - len(self._buffer) - 1) // self._state_bytes) + 1
-            for i in range(1, blocks + 1):
+            for _ in range(1, blocks + 1):
                 output = threefish(self._state, self._TWEAK).encrypt_block
                 self._state = output(self._counter0)
                 chunks.append(output(self._counter1))

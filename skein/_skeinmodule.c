@@ -29,7 +29,7 @@
 skeinObject *
 new_skein_object(void)
 {
-    skeinObject *new;
+    skeinObject *new = NULL;
 
     /* Set next_tree_level right away, so that we have a valid pointer in
        skein_dealloc in any case. */
@@ -43,9 +43,9 @@ new_skein_object(void)
 
 u08b_t get_tree_param(PyObject *seq, Py_ssize_t i, long min, long max)
 {
-    PyObject *item;
-    int overflow;
-    long v;
+    PyObject *item = NULL;
+    int overflow = 0;
+    long v = 0;
 
     item = PySequence_Fast_GET_ITEM(seq, i);
     if (PyFloat_Check(item))
@@ -72,7 +72,7 @@ value_error:
 /* hash object attributes */
 
 static PyObject *
-skein_get_name(skeinObject *self, void *closure)
+skein_get_name(skeinObject *self, [[maybe_unused]] void *closure)
 {
     char name[11];
 
@@ -81,34 +81,37 @@ skein_get_name(skeinObject *self, void *closure)
 }
 
 static PyObject *
-skein_get_block_size(skeinObject *self, void *closure)
+skein_get_block_size(skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->stateBytes);
 }
 
 static PyObject *
-skein_get_block_bits(skeinObject *self, void *closure)
+skein_get_block_bits(skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->stateBytes*8);
 }
 
 static PyObject *
-skein_get_digest_size(skeinObject *self, void *closure)
+skein_get_digest_size(skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromUnsignedLongLong((self->digestBits-1)/8+1);
 }
 
 static PyObject *
-skein_get_digest_bits(skeinObject *self, void *closure)
+skein_get_digest_bits(skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromUnsignedLongLong(self->digestBits);
 }
 
 static PyObject *
-skein_get_hashed_bits(skeinObject *self, void *closure)
+skein_get_hashed_bits(skeinObject *self, [[maybe_unused]] void *closure)
 {
-    PyObject *eight=NULL, *bytes=NULL, *product=NULL;
-    PyObject *bits=NULL, *res=NULL;
+    PyObject *eight = NULL;
+    PyObject *bytes = NULL;
+    PyObject *product = NULL;
+    PyObject *bits = NULL;
+    PyObject *res = NULL;
 
     if ((eight=PyLong_FromLong(8)) == NULL)
         return NULL;
@@ -152,22 +155,22 @@ static PyGetSetDef skein_getseters[] = {
 
 /* threefish object attributes */
 static PyObject *
-threefish_get_block_size(threefishObject *self, void *closure)
+threefish_get_block_size(threefishObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->blockBytes);
 }
 
 static PyObject *
-threefish_get_block_bits(threefishObject *self, void *closure)
+threefish_get_block_bits(threefishObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->blockBytes*8);
 }
 
 static PyObject *
-threefish_get_tweak(threefishObject *self, void *closure)
+threefish_get_tweak(threefishObject *self, [[maybe_unused]] void *closure)
 {
-    PyObject *rv;
-    char *buf;
+    PyObject *rv = NULL;
+    char *buf = NULL;
 
     if ((rv = PyBytes_FromStringAndSize(NULL, 16)) == NULL ||
             (buf = PyBytes_AsString(rv)) == NULL)
@@ -177,11 +180,11 @@ threefish_get_tweak(threefishObject *self, void *closure)
 }
 
 static int
-threefish_set_tweak(threefishObject *self, PyObject *value, void *closure)
+threefish_set_tweak(threefishObject *self, PyObject *value, [[maybe_unused]] void *closure)
 {
-    char *buf;
-    Py_ssize_t len;
-    PyObject *h=NULL;
+    char *buf = NULL;
+    Py_ssize_t len = 0;
+    PyObject *h = NULL;
 
     if (PyByteArray_Check(value))
         if ((h = value = PyBytes_FromObject(value)) == NULL)
@@ -214,7 +217,7 @@ static PyGetSetDef threefish_getseters[] = {
 int
 hash_bytes(skeinObject *sk, const u08b_t *msg, size_t msgByteCnt)
 {
-    size_t n;
+    size_t n = 0;
 
     if (msgByteCnt >= (~(u64b_t)0) - sk->hashed_bytes) {
         PyErr_SetString(PyExc_OverflowError,
@@ -279,13 +282,13 @@ tree_block_processor(skein_state_t *state,
                      const u08b_t *data, size_t count, u08b_t stateBytes)
 {
     skein_state_t *next_level = state->next_tree_level;
-    skein_state_t *last_level;
+    skein_state_t *last_level = NULL;
     skein_state_t *state2 = NULL;
     processor_t basic_processor = next_level->block_processor;
     size_t n = state->remaining_tree_blocks;
-    u08b_t w[SKEIN_MAX_BLOCK_BYTES];
+    u08b_t w[SKEIN_MAX_BLOCK_BYTES] = {0};
     u08b_t remaining_levels = state->remaining_tree_levels;
-    struct args_t *args=NULL;
+    struct args_t *args = NULL;
 
     if (!remaining_levels) {  /* we do not have to care about nodes */
         basic_processor(state, data, count, stateBytes);
@@ -438,8 +441,8 @@ finalize_tree(skein_state_t *state, skein_state_t *target_state,
 {
     skein_state_t *next_level = state->next_tree_level;
     processor_t basic_processor = next_level->block_processor;
-    skein_state_t saved_state;
-    u08b_t w[SKEIN_MAX_BLOCK_BYTES];
+    skein_state_t saved_state = {0};
+    u08b_t w[SKEIN_MAX_BLOCK_BYTES] = {0};
 
     if (next_level->next_tree_level != NULL) {
         saved_state = *next_level;
@@ -455,11 +458,13 @@ finalize_tree(skein_state_t *state, skein_state_t *target_state,
 void
 output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
 {
-    u64b_t        i, n, offset=0;
-    u64b_t        X[SKEIN_MAX_STATE_WORDS];
+    u64b_t        i = 0;
+    u64b_t        n = 0;
+    u64b_t        offset=0;
+    u64b_t        X[SKEIN_MAX_STATE_WORDS] = {0};
     skein_state_t saved_state;
-    u08b_t        saved_b[SKEIN_MAX_BLOCK_BYTES];
-    u08b_t        shift;
+    u08b_t        saved_b[SKEIN_MAX_BLOCK_BYTES] = {0};
+    u08b_t        shift = 0;
 
     /* save X and b */
     saved_state = sk->state;
@@ -524,7 +529,7 @@ Skein_256_Process_Block(skein_state_t *state,
     enum {
         WCNT = SKEIN_256_STATE_WORDS
     };
-    u64b_t w[WCNT];
+    u64b_t w[WCNT] = {0};
     u64b_t *X=state->X, *T=state->T;
 
     do {
@@ -555,8 +560,9 @@ Skein_512_Process_Block(skein_state_t *state,
         WCNT = SKEIN_512_STATE_WORDS
     };
 
-    u64b_t w[WCNT];
-    u64b_t *X=state->X, *T=state->T;
+    u64b_t w[WCNT] = {0};
+    u64b_t *X = state->X;
+    u64b_t *T = state->T;
 
     do {
         /* this implementation only supports 2**64 input bytes
@@ -587,8 +593,9 @@ Skein_1024_Process_Block(skein_state_t *state,
         WCNT = SKEIN_1024_STATE_WORDS
     };
 
-    u64b_t w[WCNT];
-    u64b_t *X=state->X, *T=state->T;
+    u64b_t w[WCNT] = {0};
+    u64b_t *X = state->X;
+    u64b_t *T = state->T;
 
     do {
         /* this implementation only supports 2**64 input bytes
@@ -617,11 +624,13 @@ Skein_1024_Process_Block(skein_state_t *state,
 static PyObject *
 skein_getstate(skeinObject *sk)
 {
-    PyObject *t;
-    u08b_t buf[SKEIN_MAX_BLOCK_BYTES];
-    skein_state_t *state;
-    Py_ssize_t i, n, len;
-    u64b_t x;
+    PyObject *t = NULL;
+    u08b_t buf[SKEIN_MAX_BLOCK_BYTES] = {0};
+    skein_state_t *state = NULL;
+    Py_ssize_t i = 0;
+    Py_ssize_t n = 0;
+    Py_ssize_t len = 0;
+    u64b_t x = 0;
 
     if ((t=PyTuple_New(8)) == NULL)
         return NULL;
@@ -680,13 +689,19 @@ skein_getstate(skeinObject *sk)
 int
 skein_setstate(skeinObject *sk, PyObject *t)
 {
-    PyObject *buf, *seq;
+    PyObject *buf = NULL;
+    PyObject *seq = NULL;
     processor_t basic_processor;
-    Py_ssize_t len, i;
-    u08b_t tree_leaf, tree_fan, tree_max;
-    u64b_t tree_blocks, remaining_levels, x;
-    size_t stateWords;
-    skein_state_t *state;
+    Py_ssize_t len = 0;
+    Py_ssize_t i = 0;
+    u08b_t tree_leaf = 0;
+    u08b_t tree_fan = 0;
+    u08b_t tree_max = 0;
+    u64b_t tree_blocks = 0;
+    u64b_t remaining_levels = 0;
+    u64b_t x = 0;
+    size_t stateWords = 0;
+    skein_state_t *state = NULL;
 
     /* minimum length and protocol version */
     if ((len=PyTuple_Size(t)) < 8  /* includes error code -1 */
@@ -809,7 +824,7 @@ static PyObject *
 skein___reduce__(skeinObject *self, PyObject *args)
 {
     PyObject *t = skein_getstate(self);
-    PyObject *res;
+    PyObject *res = NULL;
 
     res = PyTuple_Pack(1, t);
     Py_DECREF(t);
@@ -908,8 +923,9 @@ skein_digest(skeinObject *self, PyObject *args)
 {
     Py_ssize_t argc = PyTuple_GET_SIZE(args);
     u64b_t len = (self->digestBits-1)/8+1;
-    u64b_t start=0, stop=len;
-    PyObject *rv;
+    u64b_t start = 0;
+    u64b_t stop = len;
+    PyObject *rv = NULL;
 
     if (argc != 0 && argc != 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -940,11 +956,12 @@ skein_hexdigest(skeinObject *self, PyObject *nothing)
 {
     Py_ssize_t len = (self->digestBits-1)/8+1;
     Py_ssize_t hexlen = 2*len;
-    Py_ssize_t i, j;
-    char nib;
-    PyObject *rv;
-    u08b_t *hashVal;
-    char *hex;
+    Py_ssize_t i = 0;
+    Py_ssize_t j = 0;
+    char nib = 0;
+    PyObject *rv = NULL;
+    u08b_t *hashVal = NULL;
+    char *hex = NULL;
 
     if ((hashVal = PyMem_Malloc(len)) == NULL)
         return PyErr_NoMemory();
@@ -973,8 +990,8 @@ static PyObject *
 skein_copy(skeinObject *self, PyObject *nothing)
 {
     skeinObject *new = new_skein_object();
-    PyObject *t;
-    int res;
+    PyObject *t = NULL;
+    int res = 0;
 
     if (new == NULL)
         return NULL;
@@ -1011,11 +1028,12 @@ PyDoc_STRVAR(threefish_encrypt_block__doc__,
 static PyObject *
 threefish_encrypt_block(threefishObject *self, PyObject *args)
 {
-    u64b_t w[16], out[16];
+    u64b_t w[16] = {0};
+    u64b_t out[16] = {0};
     size_t len = self->blockBytes;
-    char *q;
+    char *q = NULL;
     Py_buffer buf;
-    PyObject *rv;
+    PyObject *rv = NULL;
 
     if (!PyArg_ParseTuple(args, "y*:encrypt", &buf))
         return NULL;
@@ -1046,11 +1064,12 @@ PyDoc_STRVAR(threefish_decrypt_block__doc__,
 static PyObject *
 threefish_decrypt_block(threefishObject *self, PyObject *args)
 {
-    u64b_t w[16], out[16];
+    u64b_t w[16] = {0};
+    u64b_t out[16] = {0};
     size_t len = self->blockBytes;
-    char *q;
+    char *q = NULL;
     Py_buffer buf;
-    PyObject *rv;
+    PyObject *rv = NULL;
 
     if (!PyArg_ParseTuple(args, "y*:decrypt", &buf))
         return NULL;
@@ -1089,7 +1108,8 @@ static PyMethodDef threefish_methods[] = {
 static void
 skein_dealloc(PyObject *self)
 {
-    skein_state_t *level, *prev;
+    skein_state_t *level = NULL;
+    skein_state_t *prev = NULL;
 
     /* free linked list of tree buffers */
     level = ((skeinObject *)self)->state.next_tree_level;
@@ -1195,7 +1215,7 @@ PyObject*
 init_tree(skein_state_t *state,
           u08b_t tree_leaf, u08b_t tree_fan, u08b_t tree_max)
 {
-    skein_state_t *end;
+    skein_state_t *end = NULL;
 
     /* initialize the second state */
     end = PyMem_Malloc(sizeof(skein_state_t));
@@ -1221,8 +1241,12 @@ init_skein(skeinObject *new, PyObject *args, PyObject *kw,
            int stateBits, char *paramStr)
 {
     Py_buffer buf, key, pers, pk, kid, nonce;
-    PyObject *tree, *seq, *dbobj=NULL;
-    u08b_t tree_leaf=0, tree_fan=0, tree_max=0;
+    PyObject *tree = NULL;
+    PyObject *seq = NULL;
+    PyObject *dbobj = NULL;
+    u08b_t tree_leaf=0;
+    u08b_t tree_fan=0;
+    u08b_t tree_max=0;
     u64b_t digestBits = stateBits;  /* default value */
     static char *kwlist[] = {"init", "digest_bits", "key", "pers",
                              "public_key", "key_id", "nonce", "tree", NULL};
@@ -1390,10 +1414,11 @@ PyDoc_STRVAR(threefish_new__doc__,
 static PyObject *
 threefish_new(PyObject *self, PyObject *args)
 {
-    threefishObject *new;
+    threefishObject *new = NULL;
     Py_buffer key, tweak;
-    void *encryptor, *decryptor;
-    int i;
+    void *encryptor = NULL;
+    void *decryptor = NULL;
+    int i = 0;
 
     if (!PyArg_ParseTuple(args, "y*y*:threefish", &key, &tweak))
         return NULL;
@@ -1480,7 +1505,7 @@ static struct PyModuleDef skeinmodule = {
 PyMODINIT_FUNC
 PyInit__skein(void)
 {
-    PyObject *m;
+    PyObject *m = NULL;
 
     if (PyType_Ready(&skeinType) < 0 || PyType_Ready(&threefishType) < 0)
         return NULL;
