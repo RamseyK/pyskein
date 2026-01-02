@@ -18,10 +18,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import os
-import skein
+import sys
 from io import DEFAULT_BUFFER_SIZE
+
+import skein
 
 HASH = skein.skein512
 DIGEST_BITS = 256
@@ -38,20 +39,19 @@ def printsum(f, name):
             sys.exit(130)
         h.update(buf)
     try:
-        print("{0}  {1}".format(h.hexdigest(), name))
-    except IOError as e:
+        print(f"{h.hexdigest()}  {name}")
+    except OSError as e:
         if e.errno != 32:
             raise
 
 
-def main()
+def main():
     if len(sys.argv) < 2:
         printsum(sys.stdin.buffer, "-")
     else:
         for filename in sys.argv[1:]:
             if os.path.isdir(filename):
-                print("skeinsum: {0}: is a directory".format(filename),
-                      file=sys.stderr)
+                print(f"skeinsum: {filename}: is a directory", file=sys.stderr)
                 continue
             with open(filename, "rb") as f:
                 printsum(f, filename)

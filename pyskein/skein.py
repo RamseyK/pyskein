@@ -43,9 +43,8 @@ class Random(random.Random):
         self._state_bytes = hasher().block_size
         self._state = bytes(self._state_bytes)
         self._counter0 = bytes(self._state_bytes)
-        self._counter1 = b"\1" + bytes(self._state_bytes-1)
+        self._counter1 = b"\1" + bytes(self._state_bytes - 1)
         super().__init__(seed)
-
 
     def seed(self, seed=None):
         """Initialize internal state from hashable object.
@@ -56,11 +55,10 @@ class Random(random.Random):
         if not isinstance(seed, bytes):
             r = self._random.Random(seed)
             seed = bytes(r.randrange(256) for _ in range(self._state_bytes))
-        self._state = self._hasher(self._state+seed).digest()
+        self._state = self._hasher(self._state + seed).digest()
         self._buffer = b""
         self._number = 0
         self._bits = 0
-
 
     def read(self, n):
         """Return n random bytes.
@@ -74,8 +72,8 @@ class Random(random.Random):
             raise ValueError("number of random bytes needs to be >= 0")
         if len(self._buffer) < n:
             chunks = [self._buffer]
-            blocks = ((n-len(self._buffer)-1) // self._state_bytes) + 1
-            for i in range(1, blocks+1):
+            blocks = ((n - len(self._buffer) - 1) // self._state_bytes) + 1
+            for i in range(1, blocks + 1):
                 output = threefish(self._state, self._TWEAK).encrypt_block
                 self._state = output(self._counter0)
                 chunks.append(output(self._counter1))
@@ -84,36 +82,29 @@ class Random(random.Random):
         res, self._buffer = self._buffer[:n], self._buffer[n:]
         return res
 
-
     def getrandbits(self, k):
         """Return an int with k random bits"""
         bits = self._bits
-        for b in self.read((k-self._bits-1)//8+1):
+        for b in self.read((k - self._bits - 1) // 8 + 1):
             self._number |= b << bits
             bits += 8
-        r = self._number & ((1<<k)-1)
+        r = self._number & ((1 << k) - 1)
         self._number >>= k
         self._bits = bits - k
         return r
-
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)"""
         return self.getrandbits(self._BPF) * self._RECIP_BPF
 
-
     def getstate(self):
         """Return internal state; can be passed to setstate() later."""
-        return (self._state,
-                self._buffer, self._number, self._bits,
-                self.gauss_next)
-
+        return (self._state, self._buffer, self._number, self._bits, self.gauss_next)
 
     def setstate(self, state):
         """Restore internal state from object returned by getstate()."""
-        (self._state,
-            self._buffer, self._number, self._bits,
-            self.gauss_next) = state
+        (self._state, self._buffer, self._number, self._bits, self.gauss_next) = state
+
 
 del random
 
@@ -130,22 +121,23 @@ class RandomBytes:
 
     def seed(self, seed):
         """Reseed with bytes object 'seed'"""
-        h = self._hasher(self._state+seed)
+        h = self._hasher(self._state + seed)
         self._state = h.digest()
 
     def read(self, n):
         """Return 'n' pseudo-random bytes"""
-        h = self._hasher(self._state, digest_bits=8*(self.state_size+n))
+        h = self._hasher(self._state, digest_bits=8 * (self.state_size + n))
         self._state = h.digest(0, self.state_size)
-        return h.digest(self.state_size, self.state_size+n)
+        return h.digest(self.state_size, self.state_size + n)
 
 
 ###
 ### Stream Cipher ###
 ###
 
+
 class StreamCipher:
-    DIGEST_BITS = 2**64-1
+    DIGEST_BITS = 2 ** 64 - 1
 
     def __init__(self, key, nonce=b"", hasher=skein512):
         self._h = hasher(key=key, nonce=nonce, digest_bits=self.DIGEST_BITS)
@@ -162,7 +154,7 @@ class StreamCipher:
         """Encrypt bytes object 'plain' with keystream"""
         stream = self.keystream(len(plain))
         try:
-            return bytes(x^y for x, y in zip(plain, stream))
+            return bytes(x ^ y for x, y in zip(plain, stream))
         except TypeError as e:
             self._pos -= len(plain)
             raise TypeError("argument must be a bytes object") from e

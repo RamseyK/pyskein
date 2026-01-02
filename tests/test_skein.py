@@ -44,21 +44,20 @@ class TestSkeinBase:
 
     def testBitHashing(self):
         msg = bytes(random.randrange(256) for _ in range(130))
-        for bits in range(8*130):
+        for bits in range(8 * 130):
             reference = self.HASHER(msg).digest()
             h = self.HASHER()
             h.update(msg, bits=bits)
-            h.update(bytes([(msg[bits//8]<<(bits%8))&0xff]), bits=8-bits%8)
-            h.update(msg[bits//8+1:])
+            h.update(bytes([(msg[bits // 8] << (bits % 8)) & 0xff]), bits=8 - bits % 8)
+            h.update(msg[bits // 8 + 1:])
             self.assertEqual(h.digest(), reference)
 
     def testDigestSlice(self):
-        for bits in (list(range(248,265))+[511, 512, 513]+[1023, 1024, 1025]):
-            h = self.HASHER(bytes(random.randrange(256) for _ in range(10)),
-                            digest_bits=bits)
+        for bits in (list(range(248, 265)) + [511, 512, 513] + [1023, 1024, 1025]):
+            h = self.HASHER(bytes(random.randrange(256) for _ in range(10)), digest_bits=bits)
             ref = h.digest()
             for start in range(h.digest_size):
-                for stop in range(start+1, h.digest_size+1):
+                for stop in range(start + 1, h.digest_size + 1):
                     if ref[start:stop] != h.digest(start, stop):
                         print(start, stop)
                         raise SystemExit
@@ -66,7 +65,7 @@ class TestSkeinBase:
 
     def testDigestSliceBug(self):
         for i in range(1, 100):
-            h = self.HASHER(digest_bits=2**64-i)
+            h = self.HASHER(digest_bits=2 ** 64 - i)
             self.assertEqual(h.digest(0, 10)[:1], h.digest(0, 1))
 
     def testEmptySlice(self):
@@ -80,60 +79,60 @@ class TestSkeinBase:
         self.assertEqual(hasher2.digest(), self.hasher.digest())
 
     def testRepr(self):
-        self.assertTrue(repr(self.hasher).startswith("<Skein-%s hash object at "
-                                                  % self.STATE_BITS))
+        self.assertTrue(repr(self.hasher).startswith("<Skein-%s hash object at " % self.STATE_BITS))
 
     def testHashedCount(self):
         self.hasher.update(b"123")
-        self.assertEqual(self.hasher.hashed_bits, 8*3)
+        self.assertEqual(self.hasher.hashed_bits, 8 * 3)
         self.hasher.update(b"12345")
-        self.assertEqual(self.hasher.hashed_bits, 8*8)
+        self.assertEqual(self.hasher.hashed_bits, 8 * 8)
         self.hasher.update(b"12345", bits=5)
-        self.assertEqual(self.hasher.hashed_bits, 8*8+5)
+        self.assertEqual(self.hasher.hashed_bits, 8 * 8 + 5)
         self.hasher.update(b"12345", bits=3)
-        self.assertEqual(self.hasher.hashed_bits, 9*8)
+        self.assertEqual(self.hasher.hashed_bits, 9 * 8)
 
     def testCopy(self):
         for e in range(6):
-            l = 10**e
-            a = self.HASHER(bytes(x%256 for x in range(l)))
+            l = 10 ** e
+            a = self.HASHER(bytes(x % 256 for x in range(l)))
             b = a.copy()
             self.assertEqual(a.digest(), b.digest())
             self.assertEqual(a.hashed_bits, b.hashed_bits)
-            a.update(bytes(bytes(x%256 for x in range(1, l+2))))
+            a.update(bytes(bytes(x % 256 for x in range(1, l + 2))))
             self.assertNotEqual(a.digest(), b.digest())
-            b.update(bytes(bytes(x%256 for x in range(1, l+2))))
+            b.update(bytes(bytes(x % 256 for x in range(1, l + 2))))
             self.assertEqual(a.digest(), b.digest())
 
     def testPickle(self):
-        self.hasher.update(bytes(x%256 for x in range(10000)))
+        self.hasher.update(bytes(x % 256 for x in range(10000)))
         copy = pickle.loads(pickle.dumps(self.hasher))
         self.assertEqual(self.hasher.digest(), copy.digest())
         self.assertRaises(TypeError, _skein._from_state, 1)
         self.assertRaises(ValueError, _skein._from_state, (1,))
 
     def testDigestSizes(self):
-        for bits in (1, 2**31-1, 2**32, 2**63, 2**64-1):
+        for bits in (1, 2 ** 31 - 1, 2 ** 32, 2 ** 63, 2 ** 64 - 1):
             self.assertEqual(self.HASHER(digest_bits=bits).digest_bits, bits)
-        for bits in (0, -1, 2**64, 2**64+8):
+        for bits in (0, -1, 2 ** 64, 2 ** 64 + 8):
             self.assertRaises(ValueError, self.HASHER, digest_bits=bits)
 
     def testAttributes(self):
         for digest_bits in range(1, 2049):
             hasher = self.HASHER(digest_bits=digest_bits)
-            self.assertEqual(hasher.block_size*8, self.STATE_BITS)
+            self.assertEqual(hasher.block_size * 8, self.STATE_BITS)
             self.assertEqual(hasher.block_bits, self.STATE_BITS)
-            self.assertEqual(hasher.digest_size, (digest_bits+7)//8)
+            self.assertEqual(hasher.digest_size, (digest_bits + 7) // 8)
             self.assertEqual(hasher.digest_bits, digest_bits)
-            self.assertEqual(hasher.name, "Skein-{0}".format(self.STATE_BITS))
+            self.assertEqual(hasher.name, f"Skein-{self.STATE_BITS}")
             self.assertEqual(hasher.hashed_bits, 0)
 
     def testInitArgCombinations(self):
         for n in range(8):
-            for kws in combinations(["init", "digest_bits", "key", "pers",
-                                     "public_key", "key_id", "nonce"], n):
-                kwdict = {kw:b"bar"+bytes([i]) if kw != "digest_bits" else i+1
-                          for i, kw in enumerate(kws)}
+            for kws in combinations(["init", "digest_bits", "key", "pers", "public_key", "key_id", "nonce"], n):
+                kwdict = {
+                    kw: b"bar" + bytes([i]) if kw != "digest_bits" else i + 1
+                    for i, kw in enumerate(kws)
+                }
                 self.HASHER(**kwdict)
 
     def testEmptyInitArgs(self):
@@ -143,15 +142,13 @@ class TestSkeinBase:
         self.assertEqual(self.HASHER(b"foo", public_key=b"").digest(), hash)
         self.assertEqual(self.HASHER(b"foo", key_id=b"").digest(), hash)
         self.assertEqual(self.HASHER(b"foo", nonce=b"").digest(), hash)
-        self.assertEqual(self.HASHER(b"foo", pers=b"", nonce=b"").digest(),
-                         hash)
+        self.assertEqual(self.HASHER(b"foo", pers=b"", nonce=b"").digest(), hash)
 
     def testKeywordOnly(self):
         self.assertRaises(TypeError, self.HASHER, b"foo", 512, b"bar")
 
     def testTreeParameters(self):
-        self.assertEqual(self.HASHER().digest(),
-                         self.HASHER(tree=None).digest())
+        self.assertEqual(self.HASHER().digest(), self.HASHER(tree=None).digest())
         self.assertRaises(TypeError, self.HASHER, tree="")
         self.assertRaises(TypeError, self.HASHER, tree=1)
         self.assertRaises(TypeError, self.HASHER, tree=(1,))
@@ -162,8 +159,8 @@ class TestSkeinBase:
         self.assertRaises(ValueError, self.HASHER, tree=(-1, 1, 2))
         self.assertRaises(ValueError, self.HASHER, tree=(1, -100000, 2))
         self.assertRaises(ValueError, self.HASHER, tree=(1, 1, 1))
-        self.assertRaises(ValueError, self.HASHER, tree=(10**20, 1, 2))
-        self.assertRaises(ValueError, self.HASHER, tree=(1, -10**20, 2))
+        self.assertRaises(ValueError, self.HASHER, tree=(10 ** 20, 1, 2))
+        self.assertRaises(ValueError, self.HASHER, tree=(1, -10 ** 20, 2))
         self.assertRaises(ValueError, self.HASHER, tree=(256, 1, 2))
         self.HASHER(tree=(1, 1, 2))
         self.HASHER(tree=(10, 20, 255))
@@ -178,12 +175,12 @@ class TestSkeinBase:
         r = skein.Random(b"x", hasher=self.HASHER)
         # check initial state
         state = r._state
-        d = self.HASHER(bytes(self.STATE_BITS//8)+b"x").digest()
+        d = self.HASHER(bytes(self.STATE_BITS // 8) + b"x").digest()
         self.assertEqual(state, d)
         # check state after random() call
         r.random()
-        t = skein.threefish(state, bytes(15)+bytes([63]))
-        d = t.encrypt_block(bytes(self.STATE_BITS//8))
+        t = skein.threefish(state, bytes(15) + bytes([63]))
+        d = t.encrypt_block(bytes(self.STATE_BITS // 8))
         self.assertEqual(r._state, d)
 
     def testPRNGGetSetState(self):
@@ -202,8 +199,7 @@ class TestSkeinBase:
     def testPRNGRandomStream(self):
         for i in range(0, 5000, 13):
             r = skein.Random(b"abc")
-            self.assertEqual(r.read(i)+r.read(5000-i),
-                             skein.Random(b"abc").read(5000))
+            self.assertEqual(r.read(i) + r.read(5000 - i), skein.Random(b"abc").read(5000))
 
     def test_getrandombits(self):
         r = skein.Random()
@@ -211,7 +207,7 @@ class TestSkeinBase:
             for _ in range(1000):
                 x = r.getrandbits(k)
                 self.assertGreaterEqual(x, 0)
-                self.assertLess(x, 1<<k)
+                self.assertLess(x, 1 << k)
 
     def testStreamCipher(self):
         c = skein.StreamCipher(key=b"secret", hasher=self.HASHER)
@@ -230,25 +226,33 @@ class TestSkein256(TestSkeinBase, unittest.TestCase):
     _HASHER = skein.skein256
     STATE_BITS = 256
 
+
 class TestSkein512(TestSkeinBase, unittest.TestCase):
     _HASHER = skein.skein512
     STATE_BITS = 512
+
 
 class TestSkein1024(TestSkeinBase, unittest.TestCase):
     _HASHER = skein.skein1024
     STATE_BITS = 1024
 
+
 class TestSkein1024Tree(TestSkeinBase, unittest.TestCase):
     STATE_BITS = 1024
-    def testTreeParameters(self): pass
+
+    def testTreeParameters(self):
+        pass
 
     @classmethod
     def HASHER(cls, *args, **kwargs):
         return skein.skein1024(*args, tree=(1, 2, 3), **kwargs)
 
     # These test's fail - investigate
-    def testCopy(self): pass
-    def testPickle(self): pass
+    def testCopy(self):
+        pass
+
+    def testPickle(self):
+        pass
 
 
 # class TestSkeinKAT(unittest.TestCase):
@@ -333,47 +337,43 @@ class TestSkein1024Tree(TestSkeinBase, unittest.TestCase):
 
 def by(txt):
     if "(none)" in txt:
-        return bytes()
+        return b""
     lines = [line for line in txt.split("\n") if line.startswith("   ")]
     txt = "".join(lines)
     return bytes(int(x, 16) for x in txt.split())
 
 
 class TestThreefishBase:
+
     def setUp(self):
-        self.t = skein.threefish(bytes(range(self.KEYLEN)),
-                                 bytes(range(16)))
+        self.t = skein.threefish(bytes(range(self.KEYLEN)), bytes(range(16)))
         # create a distractor object for strange string buffer false positives:
         skein.threefish(bytes(range(self.KEYLEN)), bytes(range(11, 27)))
 
     def test_attributes(self):
         self.assertEqual(self.t.block_size, self.KEYLEN)
-        self.assertEqual(self.t.block_bits, self.KEYLEN*8)
+        self.assertEqual(self.t.block_bits, self.KEYLEN * 8)
         self.assertEqual(self.t.tweak, bytes(range(16)))
 
     def test_tweak(self):
+
         def set(v):
             self.t.tweak = v
+
         self.assertRaises(TypeError, set, 0)
         self.assertRaises(ValueError, set, bytes(17))
         set(bytes(range(1, 17)))
         self.assertEqual(self.t.tweak, bytes(range(1, 17)))
 
     def test_encrypt_block(self):
-        self.assertRaises(ValueError,
-                          self.t.encrypt_block, bytes(1))
-        self.assertRaises(ValueError,
-                          self.t.encrypt_block, bytes(self.KEYLEN+1))
-        self.assertRaises(ValueError,
-                          self.t.encrypt_block, bytes(self.KEYLEN-1))
+        self.assertRaises(ValueError, self.t.encrypt_block, bytes(1))
+        self.assertRaises(ValueError, self.t.encrypt_block, bytes(self.KEYLEN + 1))
+        self.assertRaises(ValueError, self.t.encrypt_block, bytes(self.KEYLEN - 1))
 
     def test_decrypt_block(self):
-        self.assertRaises(ValueError,
-                          self.t.decrypt_block, bytes(1))
-        self.assertRaises(ValueError,
-                          self.t.decrypt_block, bytes(self.KEYLEN+1))
-        self.assertRaises(ValueError,
-                          self.t.decrypt_block, bytes(self.KEYLEN-1))
+        self.assertRaises(ValueError, self.t.decrypt_block, bytes(1))
+        self.assertRaises(ValueError, self.t.decrypt_block, bytes(self.KEYLEN + 1))
+        self.assertRaises(ValueError, self.t.decrypt_block, bytes(self.KEYLEN - 1))
 
     def test_roundtrip(self):
         for n in range(1, 101):
@@ -382,14 +382,16 @@ class TestThreefishBase:
             plain = bytes(random.randint(0, 255) for _ in range(self.KEYLEN))
             t = skein.threefish(key, tweak)
             self.assertEqual(t.decrypt_block(t.encrypt_block(plain)), plain)
-        print("\n{0} random Threefish-{1} roundtrip tests succeeded.".format(
-              n, self.KEYLEN*8))
+        print(f"\n{n} random Threefish-{self.KEYLEN*8} roundtrip tests succeeded.")
+
 
 class TestThreefish32(TestThreefishBase, unittest.TestCase):
     KEYLEN = 32
 
+
 class TestThreefish64(TestThreefishBase, unittest.TestCase):
     KEYLEN = 64
+
 
 class TestThreefish128(TestThreefishBase, unittest.TestCase):
     KEYLEN = 128
@@ -405,4 +407,4 @@ if __name__ == "__main__":
             r.run(t)
             oldc = refc
             refc = sys.gettotalrefcount()
-            print("additional references:", refc-oldc)
+            print("additional references:", refc - oldc)

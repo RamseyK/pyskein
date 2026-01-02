@@ -18,12 +18,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import os
-from random import randrange
+import sys
 from getpass import getpass
+from random import randrange
 
-from skein import threefish, skein512
+from skein import skein512, threefish
+
 BLOCK_SIZE = 32
 
 
@@ -31,32 +32,30 @@ def get_args(argv):
     """Check and process command line arguments.
 
     Returns (encrypt flag, input file name, output file name)."""
-
     if ((len(argv) != 3) or (argv[1] not in ("e", "d", "encrypt", "decrypt"))):
-        print("Usage : {0} <mode> <file>".format(os.path.basename(sys.argv[0])))
+        print(f"Usage : {os.path.basename(sys.argv[0])} <mode> <file>")
         print("<mode>: 'encrypt' (='e') or 'decrypt' (='d')")
         sys.exit(1)
     encrypt = (sys.argv[1][0] == "e")
     infn = sys.argv[2]
     if encrypt:
-        outfn = infn+".3f"
+        outfn = infn + ".3f"
     else:
         if not infn.endswith(".3f"):
             print("Name of encrypted file has to end with '.3f'")
             sys.exit(1)
         outfn = infn[:-3]
     if not os.path.isfile(infn):
-        print("'{0}' does not exist".format(infn))
+        print(f"'{infn}' does not exist")
         sys.exit(1)
     if os.path.isfile(outfn):
-        print("'{0}' exists, refusing to overwrite".format(outfn))
+        print(f"'{outfn}' exists, refusing to overwrite")
         sys.exit(1)
     return (encrypt, infn, outfn)
 
 
 def encrypt_file(inf, outf, key):
     """Encrypt file 'inf' to file 'outf' using 'key'."""
-
     # generate random tweak value and write it at the beginning of the file
     tweak = bytes(randrange(256) for _ in range(16))
     outf.write(tweak)
@@ -73,17 +72,17 @@ def encrypt_file(inf, outf, key):
         cipher.tweak = c[:16]  # cipher block chaining with first 16 bytes
 
     # pad and encrypt the last incomplete (possibly empty) block
-    block[i:] = [randrange(256) for _ in range(BLOCK_SIZE-i)]
-    block[-1] = block[-1] & ~(BLOCK_SIZE-1) | i
+    block[i:] = [randrange(256) for _ in range(BLOCK_SIZE - i)]
+    block[-1] = block[-1] & ~(BLOCK_SIZE - 1) | i
     outf.write(cipher.encrypt_block(block))
 
 
 class DecryptError(Exception):
     pass
 
+
 def decrypt_file(inf, outf, key):
     """Decrypt file 'inf' to file 'outf' using 'key'."""
-
     # read tweak value from the beginning of the file
     tweak = inf.read(16)
     if len(tweak) < 16:
@@ -106,14 +105,14 @@ def decrypt_file(inf, outf, key):
 
     # decrypt and unpad last block
     block = cipher.decrypt_block(cur)
-    i = block[-1] & (BLOCK_SIZE-1)
+    i = block[-1] & (BLOCK_SIZE - 1)
     outf.write(block[:i])
 
 
 def main():
     encrypt, infn, outfn = get_args(sys.argv)
     password = getpass().encode("utf-8")
-    key = skein512(password, digest_bits=BLOCK_SIZE*8).digest()
+    key = skein512(password, digest_bits=BLOCK_SIZE * 8).digest()
     with open(infn, "rb") as inf:
         with open(outfn, "wb") as outf:
             if encrypt:

@@ -1,11 +1,13 @@
-import skein512
-import skein
 import unittest
-from random import randint, randrange
 from itertools import combinations
+from random import randint, randrange
+
+import skein
+import skein512
 
 
 class TestThreefish(unittest.TestCase):
+
     def runTest(self):
         for i in range(100):
             key = randombytes(64)
@@ -17,11 +19,14 @@ class TestThreefish(unittest.TestCase):
 
 
 class TestSkein(unittest.TestCase):
+
     def testSequential(self):
         for n in range(7):
-            for kws in combinations(["init", "key", "pers", "public_key",
-                                     "key_id", "nonce"], n):
-                kwdict = {kw:b"foo"+bytes([i]) for i, kw in enumerate(kws)}
+            for kws in combinations(["init", "key", "pers", "public_key", "key_id", "nonce"], n):
+                kwdict = {
+                    kw: b"foo" + bytes([i])
+                    for i, kw in enumerate(kws)
+                }
                 gold = skein512.skein512(**kwdict)
                 c = skein.skein512(**kwdict)
                 self.assertEqual(c.digest(), gold)
@@ -30,8 +35,7 @@ class TestSkein(unittest.TestCase):
         for i in range(100):
             msg, key, pers, nonce = [ron() for _ in range(4)]
             tree = (randint(1, 10), randint(1, 10), randint(2, 255))
-            gold = skein512.skein512(msg, key=key, pers=pers, nonce=nonce,
-                                     tree=tree)
+            gold = skein512.skein512(msg, key=key, pers=pers, nonce=nonce, tree=tree)
             c = skein.skein512(msg, key=key, pers=pers, nonce=nonce, tree=tree)
             self.assertEqual(c.digest(), gold)
 
@@ -45,9 +49,10 @@ class TestSkein(unittest.TestCase):
 def randombytes(n):
     return bytes(randint(0, 255) for _ in range(n))
 
+
 def randomlist():
-    return [b"", randombytes(randint(1, 10)),
-            randombytes(randint(100, 1000))]
+    return [b"", randombytes(randint(1, 10)), randombytes(randint(100, 1000))]
+
 
 def ron():
     if randrange(2):

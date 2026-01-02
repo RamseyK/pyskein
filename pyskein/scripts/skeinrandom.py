@@ -18,21 +18,23 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import sys, os, fcntl
+import fcntl
+import os
+import sys
 from time import sleep
+
 from skein import RandomBytes
 
 DEV_RANDOM = "/dev/random"  # source of true random bytes
 
 
-def write_srandom(random, *, f=sys.stdout.buffer, chunk_size=2**20,
-                  verbose=False):
+def write_srandom(random, *, f=sys.stdout.buffer, chunk_size=2 ** 20, verbose=False):
     """Write pseudo-random bytes to 'f'
 
     Between chunks of 'chunk_size' bytes, reseeding is performed with bytes
     read from 'random' (assumed non-blocking).
     """
+
     def out(s):
         if verbose:
             print(s, file=sys.stderr)
@@ -40,11 +42,10 @@ def write_srandom(random, *, f=sys.stdout.buffer, chunk_size=2**20,
     state_size = RandomBytes(b"").state_size
 
     # initial seeding
-    out("waiting for {} random bytes... ".format(state_size) +
-        "(move the mouse to speed this up)")
+    out(f"waiting for {state_size} random bytes... " + "(move the mouse to speed this up)")
     seed = b""
     while 1:
-        r = random.read(state_size-len(seed))
+        r = random.read(state_size - len(seed))
         if r is not None:
             seed += r
         if len(seed) == state_size:
@@ -58,7 +59,7 @@ def write_srandom(random, *, f=sys.stdout.buffer, chunk_size=2**20,
         data = rb.read(chunk_size)
         try:
             f.write(data)
-        except IOError as e:
+        except OSError as e:
             # simply terminate on broken pipe
             if e.errno == 32:
                 break
@@ -68,7 +69,7 @@ def write_srandom(random, *, f=sys.stdout.buffer, chunk_size=2**20,
         # re-seed with as much random data as we can get
         r = random.read(state_size)
         if r is not None:
-            out("reseeding with {} random bytes".format(len(r)))
+            out(f"reseeding with {len(r)} random bytes")
             rb.seed(r)
 
 

@@ -1,9 +1,9 @@
-from time import time, sleep
-from random import randrange
 from threading import Thread
+from time import time
+
 from skein import skein512
 
-data = bytes(10**8)
+data = bytes(10 ** 8)
 
 res = []
 for THREAD in range(2):
@@ -21,6 +21,6 @@ for THREAD in range(2):
     else:
         h1.update(data)
         h2.update(data)
-    res.append(time()-t)
+    res.append(time() - t)
     assert h1.digest() == h2.digest()
-print("speed-up:", res[0]/res[1])
+print("speed-up:", res[0] / res[1])
