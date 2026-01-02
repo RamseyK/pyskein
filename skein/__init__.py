@@ -1,4 +1,4 @@
-# skein.py
+# __init__.py
 # Copyright 2009, 2010, 2011, 2012, 2013 Hagen Fürstenau <hagen@zhuliguan.net>
 #
 # This file is part of PySkein.
@@ -17,14 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from _skein import skein256, skein512, skein1024, threefish
-
-
 ###
 ### Skein-PRNG ###
 ###
-
 import random
+
+from _skein import skein256, skein512, skein1024, threefish
+
 
 class Random(random.Random):
     _BPF = random.BPF

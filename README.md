@@ -1,14 +1,12 @@
-PySkein 1.0
-===========
+# PySkein
 
 This file only covers some basic installation instructions. For any further
 information please consult the docs, starting with "doc/index.html".
 
 
-Installation
-------------
+## Installation
 
-Notes:
+### Notes:
     * You need Python 3.1 or later to run PySkein!
 
     * If you have a version of PySkein <0.5 installed, please make sure to
@@ -22,18 +20,21 @@ Notes:
 
 To build and install globally run (with appropriate permissions):
 
+```bash
 $ python3 setup.py install
+```
 
 To install locally into your home directory run:
 
+```bash
 $ python3 setup.py install --user
+```
 
 The setup script will also install the two demo scripts "skeinsum" and
 "threefish" into a corresponding location.
 
 
-Copyright and License Information
----------------------------------
+# Copyright and License Information
 
 Copyright 2008-2013 Hagen Fürstenau
 Both the software and the documentation are licensed under GPL version 3.

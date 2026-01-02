@@ -1,14 +1,12 @@
-import sys
-import re
 import pathlib
-import random
-import functools
-import unittest
 import pickle
-from itertools import combinations, chain
-from binascii import unhexlify
+import random
+import sys
+import unittest
+from itertools import combinations
 
-import skein, _skein
+import _skein
+import skein
 
 KATFILE = str(pathlib.Path(__file__).parent / "skein_golden_kat.txt")
 

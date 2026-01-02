@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # PySkein documentation build configuration file, created by
 # sphinx-quickstart on Mon Dec 29 16:16:39 2008.
