@@ -74,9 +74,9 @@ value_error:
 static PyObject *
 skein_get_name(skeinObject *self, [[maybe_unused]] void *closure)
 {
-    char name[11];
+    char name[11] = {0};
 
-    sprintf(name, "Skein-%d", self->stateBytes*8);
+    snprintf(name, sizeof(name), "Skein-%d", self->stateBytes*8);
     return PyUnicode_FromString(name);
 }
 
@@ -1252,7 +1252,7 @@ init_skein(skeinObject *new, PyObject *args, PyObject *kw,
                              "public_key", "key_id", "nonce", "tree", NULL};
     static u08b_t cfg_block[SKEIN_MAX_STATE_WORDS*8]
         = {0x53, 0x48, 0x41, 0x33, 0x01};  /* "SHA3", version 1 */
-    static char *tree_errmsg = "'tree' must be triple of tree parameters";
+    const static char *tree_errmsg = "'tree' must be triple of tree parameters";
 
     /* parse arguments */
     if (Py_SIZE(args) > 2) {

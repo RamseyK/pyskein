@@ -26,12 +26,10 @@
 
 void Threefish_256_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
-    u64b_t X0, X1, X2, X3;
-
-    X0 = p[0] + key[0];
-    X1 = p[1] + key[1] + tweak[0];
-    X2 = p[2] + key[2] + tweak[1];
-    X3 = p[3] + key[3];
+    u64b_t X0 = p[0] + key[0];
+    u64b_t X1 = p[1] + key[1] + tweak[0];
+    u64b_t X2 = p[2] + key[2] + tweak[1];
+    u64b_t X3 = p[3] + key[3];
 
     R256_8_rounds(0);
     R256_8_rounds(1);
@@ -53,9 +51,10 @@ void Threefish_256_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *
 
 void Threefish_256_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
-    u64b_t X0, X1, X2, X3;
-
-    X0 = c[0]; X1 = c[1]; X2 = c[2]; X3 = c[3];
+    u64b_t X0 = c[0];
+    u64b_t X1 = c[1];
+    u64b_t X2 = c[2];
+    u64b_t X3 = c[3];
 
     INV_R256_8_rounds(8);
     INV_R256_8_rounds(7);
@@ -76,16 +75,14 @@ void Threefish_256_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *
 
 void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
-    u64b_t X0, X1, X2, X3, X4, X5, X6, X7;
-
-    X0 = p[0] + key[0];
-    X1 = p[1] + key[1];
-    X2 = p[2] + key[2];
-    X3 = p[3] + key[3];
-    X4 = p[4] + key[4];
-    X5 = p[5] + key[5] + tweak[0];
-    X6 = p[6] + key[6] + tweak[1];
-    X7 = p[7] + key[7];
+    u64b_t X0 = p[0] + key[0];
+    u64b_t X1 = p[1] + key[1];
+    u64b_t X2 = p[2] + key[2];
+    u64b_t X3 = p[3] + key[3];
+    u64b_t X4 = p[4] + key[4];
+    u64b_t X5 = p[5] + key[5] + tweak[0];
+    u64b_t X6 = p[6] + key[6] + tweak[1];
+    u64b_t X7 = p[7] + key[7];
 
     R512_8_rounds(0);
     R512_8_rounds(1);
@@ -98,21 +95,37 @@ void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *
     R512_8_rounds(8);
 
     if (feed) {
-        out[0] = X0^p[0]; out[1] = X1^p[1]; out[2] = X2^p[2]; out[3] = X3^p[3];
-        out[4] = X4^p[4]; out[5] = X5^p[5]; out[6] = X6^p[6]; out[7] = X7^p[7];
+        out[0] = X0^p[0];
+        out[1] = X1^p[1];
+        out[2] = X2^p[2];
+        out[3] = X3^p[3];
+        out[4] = X4^p[4];
+        out[5] = X5^p[5];
+        out[6] = X6^p[6];
+        out[7] = X7^p[7];
     }
     else {
-        out[0] = X0; out[1] = X1; out[2] = X2; out[3] = X3;
-        out[4] = X4; out[5] = X5; out[6] = X6; out[7] = X7;
+        out[0] = X0;
+        out[1] = X1;
+        out[2] = X2;
+        out[3] = X3;
+        out[4] = X4;
+        out[5] = X5;
+        out[6] = X6;
+        out[7] = X7;
     }
 }
 
 void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
-    u64b_t X0, X1, X2, X3, X4, X5, X6, X7;
-
-    X0 = c[0]; X1 = c[1]; X2 = c[2]; X3 = c[3];
-    X4 = c[4]; X5 = c[5]; X6 = c[6]; X7 = c[7];
+    u64b_t X0 = c[0];
+    u64b_t X1 = c[1];
+    u64b_t X2 = c[2];
+    u64b_t X3 = c[3];
+    u64b_t X4 = c[4];
+    u64b_t X5 = c[5];
+    u64b_t X6 = c[6];
+    u64b_t X7 = c[7];
 
     INV_R512_8_rounds(8);
     INV_R512_8_rounds(7);
@@ -137,24 +150,22 @@ void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *
 
 void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
-    u64b_t X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, XA, XB, XC, XD, XE, XF;
-
-    X0 = p[0x0] + key[0x0];
-    X1 = p[0x1] + key[0x1];
-    X2 = p[0x2] + key[0x2];
-    X3 = p[0x3] + key[0x3];
-    X4 = p[0x4] + key[0x4];
-    X5 = p[0x5] + key[0x5];
-    X6 = p[0x6] + key[0x6];
-    X7 = p[0x7] + key[0x7];
-    X8 = p[0x8] + key[0x8];
-    X9 = p[0x9] + key[0x9];
-    XA = p[0xA] + key[0xA];
-    XB = p[0xB] + key[0xB];
-    XC = p[0xC] + key[0xC];
-    XD = p[0xD] + key[0xD] + tweak[0];
-    XE = p[0xE] + key[0xE] + tweak[1];
-    XF = p[0xF] + key[0xF];
+    u64b_t X0 = p[0x0] + key[0x0];
+    u64b_t X1 = p[0x1] + key[0x1];
+    u64b_t X2 = p[0x2] + key[0x2];
+    u64b_t X3 = p[0x3] + key[0x3];
+    u64b_t X4 = p[0x4] + key[0x4];
+    u64b_t X5 = p[0x5] + key[0x5];
+    u64b_t X6 = p[0x6] + key[0x6];
+    u64b_t X7 = p[0x7] + key[0x7];
+    u64b_t X8 = p[0x8] + key[0x8];
+    u64b_t X9 = p[0x9] + key[0x9];
+    u64b_t XA = p[0xA] + key[0xA];
+    u64b_t XB = p[0xB] + key[0xB];
+    u64b_t XC = p[0xC] + key[0xC];
+    u64b_t XD = p[0xD] + key[0xD] + tweak[0];
+    u64b_t XE = p[0xE] + key[0xE] + tweak[1];
+    u64b_t XF = p[0xF] + key[0xF];
 
     R1024_8_rounds(0);
     R1024_8_rounds(1);
@@ -168,29 +179,61 @@ void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t 
     R1024_8_rounds(9);
 
     if (feed) {
-        out[0x0] = X0^p[0x0]; out[0x1] = X1^p[0x1]; out[0x2] = X2^p[0x2];
-        out[0x3] = X3^p[0x3]; out[0x4] = X4^p[0x4]; out[0x5] = X5^p[0x5];
-        out[0x6] = X6^p[0x6]; out[0x7] = X7^p[0x7]; out[0x8] = X8^p[0x8];
-        out[0x9] = X9^p[0x9]; out[0xA] = XA^p[0xA]; out[0xB] = XB^p[0xB];
-        out[0xC] = XC^p[0xC]; out[0xD] = XD^p[0xD]; out[0xE] = XE^p[0xE];
+        out[0x0] = X0^p[0x0];
+        out[0x1] = X1^p[0x1];
+        out[0x2] = X2^p[0x2];
+        out[0x3] = X3^p[0x3];
+        out[0x4] = X4^p[0x4];
+        out[0x5] = X5^p[0x5];
+        out[0x6] = X6^p[0x6];
+        out[0x7] = X7^p[0x7];
+        out[0x8] = X8^p[0x8];
+        out[0x9] = X9^p[0x9];
+        out[0xA] = XA^p[0xA];
+        out[0xB] = XB^p[0xB];
+        out[0xC] = XC^p[0xC];
+        out[0xD] = XD^p[0xD];
+        out[0xE] = XE^p[0xE];
         out[0xF] = XF^p[0xF];
     }
     else {
-        out[0x0] = X0; out[0x1] = X1; out[0x2] = X2; out[0x3] = X3;
-        out[0x4] = X4; out[0x5] = X5; out[0x6] = X6; out[0x7] = X7;
-        out[0x8] = X8; out[0x9] = X9; out[0xA] = XA; out[0xB] = XB;
-        out[0xC] = XC; out[0xD] = XD; out[0xE] = XE; out[0xF] = XF;
+        out[0x0] = X0;
+        out[0x1] = X1;
+        out[0x2] = X2;
+        out[0x3] = X3;
+        out[0x4] = X4;
+        out[0x5] = X5;
+        out[0x6] = X6;
+        out[0x7] = X7;
+        out[0x8] = X8;
+        out[0x9] = X9;
+        out[0xA] = XA;
+        out[0xB] = XB;
+        out[0xC] = XC;
+        out[0xD] = XD;
+        out[0xE] = XE;
+        out[0xF] = XF;
     }
 }
 
 void Threefish_1024_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
-    u64b_t X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, XA, XB, XC, XD, XE, XF;
-
-    X0 = c[0x0]; X1 = c[0x1]; X2 = c[0x2]; X3 = c[0x3];
-    X4 = c[0x4]; X5 = c[0x5]; X6 = c[0x6]; X7 = c[0x7];
-    X8 = c[0x8]; X9 = c[0x9]; XA = c[0xA]; XB = c[0xB];
-    XC = c[0xC]; XD = c[0xD]; XE = c[0xE]; XF = c[0xF];
+    u64b_t X0 = c[0x0];
+    u64b_t X1 = c[0x1];
+    u64b_t X2 = c[0x2];
+    u64b_t X3 = c[0x3];
+    u64b_t X4 = c[0x4];
+    u64b_t X5 = c[0x5];
+    u64b_t X6 = c[0x6];
+    u64b_t X7 = c[0x7];
+    u64b_t X8 = c[0x8];
+    u64b_t X9 = c[0x9];
+    u64b_t XA = c[0xA];
+    u64b_t XB = c[0xB];
+    u64b_t XC = c[0xC];
+    u64b_t XD = c[0xD];
+    u64b_t XE = c[0xE];
+    u64b_t XF = c[0xF];
 
     INV_R1024_8_rounds(9);
     INV_R1024_8_rounds(8);
