@@ -1244,9 +1244,9 @@ init_skein(skeinObject *new, PyObject *args, PyObject *kw,
     PyObject *tree = NULL;
     PyObject *seq = NULL;
     PyObject *dbobj = NULL;
-    u08b_t tree_leaf=0;
-    u08b_t tree_fan=0;
-    u08b_t tree_max=0;
+    u08b_t tree_leaf = 0;
+    u08b_t tree_fan = 0;
+    u08b_t tree_max = 0;
     u64b_t digestBits = stateBits;  /* default value */
     static char *kwlist[] = {"init", "digest_bits", "key", "pers",
                              "public_key", "key_id", "nonce", "tree", NULL};

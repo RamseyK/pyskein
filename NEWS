@@ -1,5 +1,12 @@
 Release history and non-trivial changes:
 
+PySkein 2.0 (In Development)
+------------------------
+    - Updated to use modern packaging standards (pyproject.toml)
+
+    - Dropped support for Python versions lower than 3.11
+
+
 PySkein 1.0 (2013-08-02)
 ------------------------
     - Removed deprecated alias 'mac' for parameter 'key'

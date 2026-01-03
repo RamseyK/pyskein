@@ -1,6 +1,6 @@
 [project]
 name = "pyskein"
-version = "2.0"
+version = "2.0a1"
 description = "PySkein is a Python native extension implementation the Skein hash algorithm. Skein was one of the five finalists of the NIST SHA-3 Competition."
 requires-python = ">=3.11"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -48,6 +48,7 @@ requires = ["setuptools>=70.1.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
+include-package-data = true
 
 #[tool.setuptools.package-dir]
 # This tells setuptools to look in the 'pyskein' directory for all packages - import skein for backward compat
