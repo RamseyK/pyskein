@@ -82,15 +82,14 @@ jobs:
           name: cibw-sdist
           path: dist/*.tar.gz
 
-  upload_pypi:
+  upload:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
       id-token: write
+    # This condition ensures the job only runs when a release is published
     if: github.event_name == 'release' && github.event.action == 'published'
-    # or, alternatively, upload to PyPI on every tag starting with 'v' (remove on: release above to use this)
-    # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/download-artifact@v5
         with:
@@ -99,7 +98,16 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+        env:
+          # GITHUB_TOKEN is automatically provided by GitHub Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Pypi
+        uses: pypa/gh-action-pypi-publish@release/v1
         # To test uploads to TestPyPI, uncomment the following:
         with:
           repository-url: https://test.pypi.org/legacy/
