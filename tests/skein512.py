@@ -21,12 +21,12 @@ def print_state(g, T=None, msg=None):
 ### bytes <--> words conversions ###
 
 
-def BytesToWords(b, n):
+def bytes_to_words(b, n):
     """Return n words for 8*n bytes."""
     return [sum(b[8 * i + j] << (8 * j) for j in range(8)) for i in range(n)]
 
 
-def WordsToBytes(w):
+def words_to_bytes(w):
     """Return 8*n bytes for n words."""
     return bytearray((v >> (8 * j)) & 255 for v in w for j in range(8))
 
@@ -74,9 +74,9 @@ PI = [2, 1, 4, 7, 6, 5, 0, 3]
 
 def threefish(key, tweak, plain):
     """'key' and 'plain' contain 64 bytes, 'tweak' contains 16 bytes."""
-    k = BytesToWords(key, 8)
-    t = BytesToWords(tweak, 2)
-    v = BytesToWords(plain, 8)
+    k = bytes_to_words(key, 8)
+    t = bytes_to_words(tweak, 2)
+    v = bytes_to_words(plain, 8)
     f = [0] * 8
     d = 0
     for sk in subkeys(k, t):
@@ -90,14 +90,14 @@ def threefish(key, tweak, plain):
             for i in range(8):
                 v[i] = f[PI[i]]
             d += 1
-    return WordsToBytes(v)
+    return words_to_bytes(v)
 
 
 def threefish_decrypt(key, tweak, encrypted):
     """'key' and 'plain' contain 64 bytes, 'tweak' contains 16 bytes."""
-    k = BytesToWords(key, 8)
-    t = BytesToWords(tweak, 2)
-    v = BytesToWords(encrypted, 8)
+    k = bytes_to_words(key, 8)
+    t = bytes_to_words(tweak, 2)
+    v = bytes_to_words(encrypted, 8)
     f = [0] * 8
     d = 72
     for sk in reversed(list(subkeys(k, t))):
@@ -111,7 +111,7 @@ def threefish_decrypt(key, tweak, encrypted):
                 f[PI[i]] = v[i]
             for j in range(4):
                 v[2 * j], v[2 * j + 1] = mix_inv(d, j, f[2 * j], f[2 * j + 1])
-    return WordsToBytes(v)
+    return words_to_bytes(v)
 
 
 ### Skein ###
@@ -133,7 +133,7 @@ def ubi(g, m, ts):
         if i == len(m) - 64:
             tweak |= 1 << 127
             tweak -= len(m) - l
-        tweak_bytes = WordsToBytes([tweak & (2 ** 64 - 1), tweak >> 64])
+        tweak_bytes = words_to_bytes([tweak & (2 ** 64 - 1), tweak >> 64])
         cipher = threefish(h, tweak_bytes, block)
         h = bytearray(x ^ y for x, y in zip(cipher, block))
     return h
@@ -210,12 +210,12 @@ def tree_hash(g, msg, leaf_size, children, max_level):
 ### Print hash of MSG if called directly ###
 if __name__ == "__main__":
     MSG = b"Nobody inspects the spammish repetition"
-    hash = skein512(MSG)
+    h = skein512(MSG)
     print(f":Skein-512:   512-bit hash, msgLen = {len(MSG)*8:5} bits")
     print("\nMessage:", MSG)
     print("Result:")
-    for i in range(0, len(hash), 16):
+    for i in range(0, len(h), 16):
         print("     ", end="")
         for j in range(i, i + 16, 4):
-            print(" ".join(format(b, "02X") for b in hash[j:j + 4]), end="  ")
+            print(" ".join(format(b, "02X") for b in h[j:j + 4]), end="  ")
         print()

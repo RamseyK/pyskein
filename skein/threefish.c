@@ -24,7 +24,7 @@
 #include "threefish.h"
 
 
-void Threefish_256_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
+void Threefish_256_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
     u64b_t X0 = p[0] + key[0];
     u64b_t X1 = p[1] + key[1] + tweak[0];
@@ -49,7 +49,7 @@ void Threefish_256_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *
     }
 }
 
-void Threefish_256_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
+void Threefish_256_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
     u64b_t X0 = c[0];
     u64b_t X1 = c[1];
@@ -73,7 +73,7 @@ void Threefish_256_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *
 }
 
 
-void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
+void Threefish_512_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
     u64b_t X0 = p[0] + key[0];
     u64b_t X1 = p[1] + key[1];
@@ -116,7 +116,7 @@ void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *
     }
 }
 
-void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
+void Threefish_512_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
     u64b_t X0 = c[0];
     u64b_t X1 = c[1];
@@ -148,7 +148,7 @@ void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *
 }
 
 
-void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
+void Threefish_1024_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
     u64b_t X0 = p[0x0] + key[0x0];
     u64b_t X1 = p[0x1] + key[0x1];
@@ -216,7 +216,7 @@ void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t 
     }
 }
 
-void Threefish_1024_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
+void Threefish_1024_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
     u64b_t X0 = c[0x0];
     u64b_t X1 = c[0x1];

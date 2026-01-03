@@ -72,7 +72,7 @@ value_error:
 /* hash object attributes */
 
 static PyObject *
-skein_get_name(skeinObject *self, [[maybe_unused]] void *closure)
+skein_get_name(const skeinObject *self, [[maybe_unused]] void *closure)
 {
     char name[11] = {0};
 
@@ -81,31 +81,31 @@ skein_get_name(skeinObject *self, [[maybe_unused]] void *closure)
 }
 
 static PyObject *
-skein_get_block_size(skeinObject *self, [[maybe_unused]] void *closure)
+skein_get_block_size(const skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->stateBytes);
 }
 
 static PyObject *
-skein_get_block_bits(skeinObject *self, [[maybe_unused]] void *closure)
+skein_get_block_bits(const skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->stateBytes*8);
 }
 
 static PyObject *
-skein_get_digest_size(skeinObject *self, [[maybe_unused]] void *closure)
+skein_get_digest_size(const skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromUnsignedLongLong((self->digestBits-1)/8+1);
 }
 
 static PyObject *
-skein_get_digest_bits(skeinObject *self, [[maybe_unused]] void *closure)
+skein_get_digest_bits(const skeinObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromUnsignedLongLong(self->digestBits);
 }
 
 static PyObject *
-skein_get_hashed_bits(skeinObject *self, [[maybe_unused]] void *closure)
+skein_get_hashed_bits(const skeinObject *self, [[maybe_unused]] void *closure)
 {
     PyObject *eight = NULL;
     PyObject *bytes = NULL;
@@ -155,19 +155,19 @@ static PyGetSetDef skein_getseters[] = {
 
 /* threefish object attributes */
 static PyObject *
-threefish_get_block_size(threefishObject *self, [[maybe_unused]] void *closure)
+threefish_get_block_size(const threefishObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->blockBytes);
 }
 
 static PyObject *
-threefish_get_block_bits(threefishObject *self, [[maybe_unused]] void *closure)
+threefish_get_block_bits(const threefishObject *self, [[maybe_unused]] void *closure)
 {
     return PyLong_FromLong(self->blockBytes*8);
 }
 
 static PyObject *
-threefish_get_tweak(threefishObject *self, [[maybe_unused]] void *closure)
+threefish_get_tweak(const threefishObject *self, [[maybe_unused]] void *closure)
 {
     PyObject *rv = NULL;
     char *buf = NULL;
@@ -180,7 +180,7 @@ threefish_get_tweak(threefishObject *self, [[maybe_unused]] void *closure)
 }
 
 static int
-threefish_set_tweak(threefishObject *self, PyObject *value, [[maybe_unused]] void *closure)
+threefish_set_tweak(const threefishObject *self, PyObject *value, [[maybe_unused]] void *closure)
 {
     char *buf = NULL;
     Py_ssize_t len = 0;
@@ -821,7 +821,7 @@ skein_setstate(skeinObject *sk, PyObject *t)
 PyObject *from_state_func;
 
 static PyObject *
-skein___reduce__(skeinObject *self, PyObject *args)
+skein___reduce__(skeinObject *self, [[maybe_unused]] PyObject *args)
 {
     PyObject *t = skein_getstate(self);
     PyObject *res = NULL;
@@ -952,7 +952,7 @@ PyDoc_STRVAR(skein_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 static PyObject *
-skein_hexdigest(skeinObject *self, PyObject *nothing)
+skein_hexdigest(skeinObject *self, [[maybe_unused]] PyObject *nothing)
 {
     Py_ssize_t len = (self->digestBits-1)/8+1;
     Py_ssize_t hexlen = 2*len;
@@ -987,7 +987,7 @@ skein_hexdigest(skeinObject *self, PyObject *nothing)
 PyDoc_STRVAR(skein_copy__doc__, "Return a copy of the hash object.");
 
 static PyObject *
-skein_copy(skeinObject *self, PyObject *nothing)
+skein_copy(skeinObject *self, [[maybe_unused]] PyObject *nothing)
 {
     skeinObject *new = new_skein_object();
     PyObject *t = NULL;
