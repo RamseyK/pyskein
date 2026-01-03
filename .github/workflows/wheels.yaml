@@ -83,11 +83,11 @@ jobs:
           path: dist/*.tar.gz
 
   upload:
+    name: Upload to GitHub Releases and PyPi
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment: pypi
-    permissions:
-      id-token: write
+    permissions: write-all
     # This condition ensures the job only runs when a release is published
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
