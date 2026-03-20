@@ -79,7 +79,7 @@ typedef struct {
     void(*encryptor)(u64b_t *, u64b_t *, const u64b_t *, u64b_t *, int);
     void(*decryptor)(u64b_t *, u64b_t *, const u64b_t *, u64b_t *);
     u64b_t kw[SKEIN_MAX_STATE_WORDS+4];  /* precomputed key schedule */
-    size_t blockBytes;
+    ssize_t blockBytes;
 } threefishObject;
 
 

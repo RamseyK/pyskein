@@ -691,7 +691,7 @@ skein_setstate(skeinObject *sk, PyObject *t)
 {
     PyObject *buf = NULL;
     PyObject *seq = NULL;
-    processor_t basic_processor;
+    processor_t basic_processor = {0};
     Py_ssize_t len = 0;
     Py_ssize_t i = 0;
     u08b_t tree_leaf = 0;
@@ -851,7 +851,7 @@ skein_update(skeinObject *self, PyObject *args, PyObject *kw)
 {
     static char *kwlist[] = {"message", "bits", NULL};
     Py_ssize_t bytes, bits = -1;
-    Py_buffer buf;
+    Py_buffer buf = {0};
 
     if (!PyArg_ParseTupleAndKeywords(args, kw, "y*|n:update", kwlist,
                                      &buf, &bits))
@@ -1030,9 +1030,9 @@ threefish_encrypt_block(threefishObject *self, PyObject *args)
 {
     u64b_t w[16] = {0};
     u64b_t out[16] = {0};
-    size_t len = self->blockBytes;
+    ssize_t len = self->blockBytes;
     char *q = NULL;
-    Py_buffer buf;
+    Py_buffer buf = {0};
     PyObject *rv = NULL;
 
     if (!PyArg_ParseTuple(args, "y*:encrypt", &buf))
@@ -1066,9 +1066,9 @@ threefish_decrypt_block(threefishObject *self, PyObject *args)
 {
     u64b_t w[16] = {0};
     u64b_t out[16] = {0};
-    size_t len = self->blockBytes;
+    ssize_t len = self->blockBytes;
     char *q = NULL;
-    Py_buffer buf;
+    Py_buffer buf = {0};
     PyObject *rv = NULL;
 
     if (!PyArg_ParseTuple(args, "y*:decrypt", &buf))
@@ -1240,7 +1240,12 @@ int
 init_skein(skeinObject *new, PyObject *args, PyObject *kw,
            int stateBits, char *paramStr)
 {
-    Py_buffer buf, key, pers, pk, kid, nonce;
+    Py_buffer buf = {0};
+    Py_buffer key = {0};
+    Py_buffer pers = {0};
+    Py_buffer pk = {0};
+    Py_buffer kid = {0};
+    Py_buffer nonce = {0};
     PyObject *tree = NULL;
     PyObject *seq = NULL;
     PyObject *dbobj = NULL;
@@ -1372,7 +1377,7 @@ PyDoc_STRVAR(skein ## N ## _new__doc__,  \
 static PyObject * \
 skein ## N ## _new(PyObject *self, PyObject *args, PyObject *kw) \
 { \
-    skeinObject *new; \
+    skeinObject *new = NULL; \
 \
     if ((new=new_skein_object()) == NULL) \
         return NULL; \
@@ -1392,8 +1397,8 @@ FACTORYDEF(1024)
 static PyObject *
 skein__from_state(PyObject *self, PyObject *args)
 {
-    PyObject *t;
-    skeinObject *new;
+    PyObject *t = NULL;
+    skeinObject *new = NULL;
 
     if (!PyArg_ParseTuple(args, "O!:_from_state", &PyTuple_Type, &t))
         return NULL;
@@ -1415,7 +1420,8 @@ static PyObject *
 threefish_new(PyObject *self, PyObject *args)
 {
     threefishObject *new = NULL;
-    Py_buffer key, tweak;
+    Py_buffer key = {0};
+    Py_buffer tweak = {0};
     void *encryptor = NULL;
     void *decryptor = NULL;
     int i = 0;

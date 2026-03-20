@@ -1,6 +1,7 @@
 import pathlib
 import pickle
 import random
+import re
 import sys
 import unittest
 from itertools import combinations
