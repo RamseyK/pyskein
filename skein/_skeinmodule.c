@@ -172,9 +172,15 @@ threefish_get_tweak(const threefishObject *self, [[maybe_unused]] void *closure)
     PyObject *rv = NULL;
     char *buf = NULL;
 
-    if ((rv = PyBytes_FromStringAndSize(NULL, 16)) == NULL ||
-            (buf = PyBytes_AsString(rv)) == NULL)
+    rv = PyBytes_FromStringAndSize(NULL, 16);
+    if (rv == NULL)
         return NULL;
+
+    if ((buf = PyBytes_AsString(rv)) == NULL) {
+        Py_DECREF(rv);
+        return NULL;
+    }
+
     WORDS_TO_BYTES((u08b_t *)buf, self->kw, 16);
     return rv;
 }
@@ -679,7 +685,9 @@ skein_getstate(skeinObject *sk)
 
         if ((state=state->next_tree_level) == NULL)
             break;
-        _PyTuple_Resize(&t, len+=3);
+
+        len+=3;
+        _PyTuple_Resize(&t, len);
     };
 
     return t;
@@ -1048,10 +1056,13 @@ threefish_encrypt_block(threefishObject *self, PyObject *args)
     }
 
     /* set up output buffer */
-    if ((rv = PyBytes_FromStringAndSize(NULL, len)) == NULL)
+    rv = PyBytes_FromStringAndSize(NULL, len);
+    if (rv == NULL)
         return NULL;
-    if ((q = PyBytes_AsString(rv)) == NULL)
+    if ((q = PyBytes_AsString(rv)) == NULL) {
+        Py_DECREF(rv);
         return NULL;
+    }
 
     BYTES_TO_WORDS(w, buf.buf, len/8);
     self->encryptor(self->kw+3, self->kw, w, out, 0);
@@ -1084,10 +1095,13 @@ threefish_decrypt_block(threefishObject *self, PyObject *args)
     }
 
     /* set up output buffer */
-    if ((rv = PyBytes_FromStringAndSize(NULL, len)) == NULL)
+    rv = PyBytes_FromStringAndSize(NULL, len);
+    if (rv == NULL)
         return NULL;
-    if ((q = PyBytes_AsString(rv)) == NULL)
+    if ((q = PyBytes_AsString(rv)) == NULL) {
+        Py_DECREF(rv);
         return NULL;
+    }
 
     BYTES_TO_WORDS(w, buf.buf, len/8);
     self->decryptor(self->kw+3, self->kw, w, out);
