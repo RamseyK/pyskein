@@ -29,13 +29,13 @@
 skeinObject *
 new_skein_object(void)
 {
-    skeinObject *new = NULL;
+    skeinObject *new_obj = NULL;
 
     /* Set next_tree_level right away, so that we have a valid pointer in
        skein_dealloc in any case. */
-    if ((new=PyObject_New(skeinObject, &skeinType)) != NULL)
-        new->state.next_tree_level = NULL;
-    return new;
+    if ((new_obj=PyObject_New(skeinObject, &skeinType)) != NULL)
+        new_obj->state.next_tree_level = NULL;
+    return new_obj;
 }
 
 
@@ -1000,17 +1000,17 @@ PyDoc_STRVAR(skein_copy__doc__, "Return a copy of the hash object.");
 static PyObject *
 skein_copy(skeinObject *self, [[maybe_unused]] PyObject *nothing)
 {
-    skeinObject *new = new_skein_object();
+    skeinObject *new_obj = new_skein_object();
     PyObject *t = NULL;
     int res = 0;
 
-    if (new == NULL)
+    if (new_obj == NULL)
         return NULL;
     t = skein_getstate(self);
-    res = skein_setstate(new, t);
+    res = skein_setstate(new_obj, t);
     Py_DECREF(t);
     if (res)
-        return (PyObject *)new;
+        return (PyObject *)new_obj;
     PyErr_SetString(PyExc_RuntimeError, "internal error");
     return NULL;
 }
@@ -1254,7 +1254,7 @@ init_tree(skein_state_t *state,
 }
 
 int
-init_skein(skeinObject *new, PyObject *args, PyObject *kw,
+init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
            int stateBits, char *paramStr)
 {
     Py_buffer buf = {0};
@@ -1318,37 +1318,37 @@ init_skein(skeinObject *new, PyObject *args, PyObject *kw,
     }
 
     /* initialize skein object */
-    memset(new->state.X, 0, sizeof(new->state.X));
-    new->digestBits = digestBits;
-    new->stateBytes = stateBits / 8;
-    new->hashed_bytes = 0;
-    new->missing_bits = 0;
+    memset(new_obj->state.X, 0, sizeof(new_obj->state.X));
+    new_obj->digestBits = digestBits;
+    new_obj->stateBytes = stateBits / 8;
+    new_obj->hashed_bytes = 0;
+    new_obj->missing_bits = 0;
 
     /* hash key input if present */
     if (key.buf && key.len)
-        HASH_BLOCKS(new, key.buf, key.len, KEY)
+        HASH_BLOCKS(new_obj, key.buf, key.len, KEY)
 
     /* hash config block */
     WORDS_TO_BYTES(cfg_block+8, &digestBits, 8);
     cfg_block[16] = tree_leaf;
     cfg_block[17] = tree_fan;
     cfg_block[18] = tree_max;
-    HASH_BLOCK(new, cfg_block, 32, CFG)
+    HASH_BLOCK(new_obj, cfg_block, 32, CFG)
 
     /* hash remaining inputs types */
     if (pers.buf && pers.len)
-        HASH_BLOCKS(new, pers.buf, pers.len, PERS);
+        HASH_BLOCKS(new_obj, pers.buf, pers.len, PERS);
     if (pk.buf && pk.len)
-        HASH_BLOCKS(new, pk.buf, pk.len, PK);
+        HASH_BLOCKS(new_obj, pk.buf, pk.len, PK);
     if (kid.buf && kid.len)
-        HASH_BLOCKS(new, kid.buf, kid.len, KID);
+        HASH_BLOCKS(new_obj, kid.buf, kid.len, KID);
     if (nonce.buf && nonce.len)
-        HASH_BLOCKS(new, nonce.buf, nonce.len, NONCE);
+        HASH_BLOCKS(new_obj, nonce.buf, nonce.len, NONCE);
 
     /* initialize message hashing */
-    HASH_INIT(new, MSG);
+    HASH_INIT(new_obj, MSG);
     if (tree_max)
-        init_tree(&new->state, tree_leaf, tree_fan, tree_max);
+        init_tree(&new_obj->state, tree_leaf, tree_fan, tree_max);
 
     if (key.buf != NULL)
         PyBuffer_Release(&key);
@@ -1362,7 +1362,7 @@ init_skein(skeinObject *new, PyObject *args, PyObject *kw,
         PyBuffer_Release(&nonce);
 
     if (buf.buf != NULL) {
-        if (!hash_bytes(new, buf.buf, buf.len))
+        if (!hash_bytes(new_obj, buf.buf, buf.len))
             goto error;
         PyBuffer_Release(&buf);
     }
@@ -1381,7 +1381,7 @@ error:
         PyBuffer_Release(&kid);
     if (nonce.buf != NULL)
         PyBuffer_Release(&nonce);
-    new->state.next_tree_level = NULL;  /* otherwise dealloc gets problems */
+    new_obj->state.next_tree_level = NULL;  /* otherwise dealloc gets problems */
     return 0;
 }
 
@@ -1394,15 +1394,15 @@ PyDoc_STRVAR(skein ## N ## _new__doc__,  \
 static PyObject * \
 skein ## N ## _new(PyObject *self, PyObject *args, PyObject *kw) \
 { \
-    skeinObject *new = NULL; \
+    skeinObject *new_obj = NULL; \
 \
-    if ((new=new_skein_object()) == NULL) \
+    if ((new_obj=new_skein_object()) == NULL) \
         return NULL; \
-    new->state.block_processor = &Skein_ ## N ## _Process_Block; \
-    if (init_skein(new, args, kw, N, "|y*Oy*y*y*y*y*O:skein" #N)) \
-        return (PyObject *)new; \
+    new_obj->state.block_processor = &Skein_ ## N ## _Process_Block; \
+    if (init_skein(new_obj, args, kw, N, "|y*Oy*y*y*y*y*O:skein" #N)) \
+        return (PyObject *)new_obj; \
     else { \
-        Py_CLEAR(new); \
+        Py_CLEAR(new_obj); \
         return NULL; \
     }\
 }
@@ -1415,15 +1415,15 @@ static PyObject *
 skein__from_state(PyObject *self, PyObject *args)
 {
     PyObject *t = NULL;
-    skeinObject *new = NULL;
+    skeinObject *new_obj = NULL;
 
     if (!PyArg_ParseTuple(args, "O!:_from_state", &PyTuple_Type, &t))
         return NULL;
-    if ((new=new_skein_object()) == NULL)
+    if ((new_obj=new_skein_object()) == NULL)
         return NULL;
-    if (skein_setstate(new, t))
-        return (PyObject *)new;
-    Py_DECREF(new);
+    if (skein_setstate(new_obj, t))
+        return (PyObject *)new_obj;
+    Py_DECREF(new_obj);
     PyErr_SetString(PyExc_ValueError, "invalid state");
     return NULL;
 }
@@ -1436,7 +1436,7 @@ PyDoc_STRVAR(threefish_new__doc__,
 static PyObject *
 threefish_new(PyObject *self, PyObject *args)
 {
-    threefishObject *new = NULL;
+    threefishObject *new_obj = NULL;
     Py_buffer key = {0};
     Py_buffer tweak = {0};
     void *encryptor = NULL;
@@ -1470,24 +1470,24 @@ threefish_new(PyObject *self, PyObject *args)
     }
 
     /* create object */
-    new = PyObject_New(threefishObject, &threefishType);
-    if (new == NULL)
+    new_obj = PyObject_New(threefishObject, &threefishType);
+    if (new_obj == NULL)
         goto error;
-    new->encryptor = encryptor;
-    new->decryptor = decryptor;
-    new->blockBytes = key.len;
+    new_obj->encryptor = encryptor;
+    new_obj->decryptor = decryptor;
+    new_obj->blockBytes = key.len;
 
     /* precompute key schedule */
-    BYTES_TO_WORDS(new->kw, tweak.buf, 2);
-    BYTES_TO_WORDS(new->kw+3, key.buf, key.len/8);
-    new->kw[2] = new->kw[0] ^ new->kw[1];
-    new->kw[3+key.len/8] = SKEIN_KS_PARITY;
+    BYTES_TO_WORDS(new_obj->kw, tweak.buf, 2);
+    BYTES_TO_WORDS(new_obj->kw+3, key.buf, key.len/8);
+    new_obj->kw[2] = new_obj->kw[0] ^ new_obj->kw[1];
+    new_obj->kw[3+key.len/8] = SKEIN_KS_PARITY;
     for (i=3; i<3+key.len/8; i++)
-        new->kw[3+key.len/8] ^= new->kw[i];
+        new_obj->kw[3+key.len/8] ^= new_obj->kw[i];
 
     PyBuffer_Release(&key);
     PyBuffer_Release(&tweak);
-    return (PyObject *)new;
+    return (PyObject *)new_obj;
 
 error:
     PyBuffer_Release(&key);
