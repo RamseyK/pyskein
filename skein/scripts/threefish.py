@@ -90,16 +90,16 @@ def decrypt_file(inf, outf, key):
 
     # decrypt all complete blocks
     cipher = threefish(key, tweak)
-    cur, next = bytearray(BLOCK_SIZE), bytearray(BLOCK_SIZE)
+    cur, nxt = bytearray(BLOCK_SIZE), bytearray(BLOCK_SIZE)
     if inf.readinto(cur) < BLOCK_SIZE:
         raise DecryptError
     while 1:
-        i = inf.readinto(next)
+        i = inf.readinto(nxt)
         if i < BLOCK_SIZE:
             break
         outf.write(cipher.decrypt_block(cur))
         cipher.tweak = cur[:16]  # cipher block chaining with first 16 bytes
-        cur, next = next, cur
+        cur, nxt = nxt, cur
     if i:
         raise DecryptError
 

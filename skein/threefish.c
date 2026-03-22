@@ -31,15 +31,15 @@ void Threefish_256_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     u64b_t X2 = p[2] + key[2] + tweak[1];
     u64b_t X3 = p[3] + key[3];
 
-    R256_8_rounds(0);
-    R256_8_rounds(1);
-    R256_8_rounds(2);
-    R256_8_rounds(3);
-    R256_8_rounds(4);
-    R256_8_rounds(5);
-    R256_8_rounds(6);
-    R256_8_rounds(7);
-    R256_8_rounds(8);
+    R256_8_rounds(0)
+    R256_8_rounds(1)
+    R256_8_rounds(2)
+    R256_8_rounds(3)
+    R256_8_rounds(4)
+    R256_8_rounds(5)
+    R256_8_rounds(6)
+    R256_8_rounds(7)
+    R256_8_rounds(8)
 
     if (feed) {
         out[0] = X0^p[0]; out[1] = X1^p[1]; out[2] = X2^p[2]; out[3] = X3^p[3];
@@ -56,15 +56,15 @@ void Threefish_256_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     u64b_t X2 = c[2];
     u64b_t X3 = c[3];
 
-    INV_R256_8_rounds(8);
-    INV_R256_8_rounds(7);
-    INV_R256_8_rounds(6);
-    INV_R256_8_rounds(5);
-    INV_R256_8_rounds(4);
-    INV_R256_8_rounds(3);
-    INV_R256_8_rounds(2);
-    INV_R256_8_rounds(1);
-    INV_R256_8_rounds(0);
+    INV_R256_8_rounds(8)
+    INV_R256_8_rounds(7)
+    INV_R256_8_rounds(6)
+    INV_R256_8_rounds(5)
+    INV_R256_8_rounds(4)
+    INV_R256_8_rounds(3)
+    INV_R256_8_rounds(2)
+    INV_R256_8_rounds(1)
+    INV_R256_8_rounds(0)
 
     out[0] = X0 - key[0];
     out[1] = X1 - key[1] - tweak[0];
@@ -84,15 +84,15 @@ void Threefish_512_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     u64b_t X6 = p[6] + key[6] + tweak[1];
     u64b_t X7 = p[7] + key[7];
 
-    R512_8_rounds(0);
-    R512_8_rounds(1);
-    R512_8_rounds(2);
-    R512_8_rounds(3);
-    R512_8_rounds(4);
-    R512_8_rounds(5);
-    R512_8_rounds(6);
-    R512_8_rounds(7);
-    R512_8_rounds(8);
+    R512_8_rounds(0)
+    R512_8_rounds(1)
+    R512_8_rounds(2)
+    R512_8_rounds(3)
+    R512_8_rounds(4)
+    R512_8_rounds(5)
+    R512_8_rounds(6)
+    R512_8_rounds(7)
+    R512_8_rounds(8)
 
     if (feed) {
         out[0] = X0^p[0];
@@ -127,15 +127,15 @@ void Threefish_512_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     u64b_t X6 = c[6];
     u64b_t X7 = c[7];
 
-    INV_R512_8_rounds(8);
-    INV_R512_8_rounds(7);
-    INV_R512_8_rounds(6);
-    INV_R512_8_rounds(5);
-    INV_R512_8_rounds(4);
-    INV_R512_8_rounds(3);
-    INV_R512_8_rounds(2);
-    INV_R512_8_rounds(1);
-    INV_R512_8_rounds(0);
+    INV_R512_8_rounds(8)
+    INV_R512_8_rounds(7)
+    INV_R512_8_rounds(6)
+    INV_R512_8_rounds(5)
+    INV_R512_8_rounds(4)
+    INV_R512_8_rounds(3)
+    INV_R512_8_rounds(2)
+    INV_R512_8_rounds(1)
+    INV_R512_8_rounds(0)
 
     out[0] = X0 - key[0];
     out[1] = X1 - key[1];

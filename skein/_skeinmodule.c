@@ -464,7 +464,6 @@ finalize_tree(skein_state_t *state, skein_state_t *target_state,
 void
 output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
 {
-    u64b_t        i = 0;
     u64b_t        n = 0;
     u64b_t        offset=0;
     u64b_t        X[SKEIN_MAX_STATE_WORDS] = {0};
@@ -489,7 +488,7 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
     memcpy(X, sk->state.X, sizeof(X)); /* keep a local copy */
     memset(sk->b, 0, sizeof(sk->b));   /* buffer for output counter */
     shift = start%sk->stateBytes;
-    for (i=start/sk->stateBytes; i<=(stop-1)/sk->stateBytes; ++i) {
+    for (u64b_t i = start/sk->stateBytes; i<=(stop-1)/sk->stateBytes; ++i) {
         WORDS_TO_BYTES(sk->b, &i, 4);
         HASH_BLOCK(sk, sk->b, 8, OUT);
         n = stop-i*sk->stateBytes;
@@ -536,7 +535,8 @@ Skein_256_Process_Block(skein_state_t *state,
         WCNT = SKEIN_256_STATE_WORDS
     };
     u64b_t w[WCNT] = {0};
-    u64b_t *X=state->X, *T=state->T;
+    u64b_t *X = state->X;
+    u64b_t *T = state->T;
 
     do {
         /* this implementation only supports 2**64 input bytes
@@ -688,7 +688,7 @@ skein_getstate(skeinObject *sk)
 
         len+=3;
         _PyTuple_Resize(&t, len);
-    };
+    }
 
     return t;
 }
@@ -861,7 +861,8 @@ static PyObject *
 skein_update(skeinObject *self, PyObject *args, PyObject *kw)
 {
     static char *kwlist[] = {"message", "bits", NULL};
-    Py_ssize_t bytes, bits = -1;
+    Py_ssize_t bytes = -1;
+    Py_ssize_t bits = -1;
     Py_buffer buf = {0};
 
     if (!PyArg_ParseTupleAndKeywords(args, kw, "y*|n:update", kwlist,
@@ -967,8 +968,6 @@ skein_hexdigest(skeinObject *self, [[maybe_unused]] PyObject *nothing)
 {
     Py_ssize_t len = (self->digestBits-1)/8+1;
     Py_ssize_t hexlen = 2*len;
-    Py_ssize_t i = 0;
-    Py_ssize_t j = 0;
     char nib = 0;
     PyObject *rv = NULL;
     u08b_t *hashVal = NULL;
@@ -982,7 +981,7 @@ skein_hexdigest(skeinObject *self, [[maybe_unused]] PyObject *nothing)
     }
 
     output_hash(self, hashVal, 0, len);
-    for (i=j=0; i<len; i++) {
+    for (Py_ssize_t i = 0, j = 0; i < len; i++) {
         nib = (hashVal[i] >> 4) & 0x0F;
         hex[j++] = (nib<10) ? '0'+nib : 'a'-10+nib;
         nib = hashVal[i] & 0x0F;
@@ -1441,7 +1440,6 @@ threefish_new(PyObject *self, PyObject *args)
     Py_buffer tweak = {0};
     void *encryptor = NULL;
     void *decryptor = NULL;
-    int i = 0;
 
     if (!PyArg_ParseTuple(args, "y*y*:threefish", &key, &tweak))
         return NULL;
@@ -1482,7 +1480,7 @@ threefish_new(PyObject *self, PyObject *args)
     BYTES_TO_WORDS(new_obj->kw+3, key.buf, key.len/8);
     new_obj->kw[2] = new_obj->kw[0] ^ new_obj->kw[1];
     new_obj->kw[3+key.len/8] = SKEIN_KS_PARITY;
-    for (i=3; i<3+key.len/8; i++)
+    for (int i = 3; i < 3+key.len/8; i++)
         new_obj->kw[3+key.len/8] ^= new_obj->kw[i];
 
     PyBuffer_Release(&key);
