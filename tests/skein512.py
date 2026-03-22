@@ -2,7 +2,7 @@
 # Written by Hagen Fürstenau, released to the public domain.
 
 
-def print_state(g, T=None, msg=None):
+def print_state(g, t=None, msg=None):
     if msg:
         print(msg)
     for i in range(len(g) // 8):
@@ -10,11 +10,11 @@ def print_state(g, T=None, msg=None):
         for j in range(8):
             print(f" {g[8*i+j]}", end="")
         print()
-    if T is not None:
+    if t is not None:
         for i in (0, 1):
             print(f"T[{i}] =", end="")
             for j in range(8):
-                print(f" {T[8*i+j]}", end="")
+                print(f" {t[8*i+j]}", end="")
             print()
 
 

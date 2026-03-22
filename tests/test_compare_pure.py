@@ -9,7 +9,7 @@ import skein512
 class TestThreefish(unittest.TestCase):
 
     def runTest(self):
-        for i in range(100):
+        for _ in range(100):
             key = randombytes(64)
             tweak = randombytes(16)
             plain = randombytes(64)
@@ -21,7 +21,7 @@ class TestThreefish(unittest.TestCase):
 class TestSkein(unittest.TestCase):
 
     def test_sequential(self):
-        for n in range(7):
+        for _ in range(7):
             for kws in combinations(["init", "key", "pers", "public_key", "key_id", "nonce"], n):
                 kwdict = {
                     kw: b"foo" + bytes([i])
@@ -32,7 +32,7 @@ class TestSkein(unittest.TestCase):
                 self.assertEqual(c.digest(), gold)
 
     def test_tree(self):
-        for i in range(100):
+        for _ in range(100):
             msg, key, pers, nonce = [ron() for _ in range(4)]
             tree = (randint(1, 10), randint(1, 10), randint(2, 255))
             gold = skein512.skein512(msg, key=key, pers=pers, nonce=nonce, tree=tree)

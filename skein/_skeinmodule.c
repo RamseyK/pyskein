@@ -739,7 +739,9 @@ skein_setstate(skeinObject *sk, PyObject *t)
 
     /* b and bCnt */
     buf = PyTuple_GET_ITEM(t, 5);
-    if (!PyBytes_Check(buf) || ((i=PyBytes_Size(buf)) > sk->stateBytes))
+    if (!PyBytes_Check(buf))
+        return 0;
+    if ((i=PyBytes_Size(buf)) > sk->stateBytes)
         return 0;
     memcpy(sk->b, PyBytes_AS_STRING(buf), i);
     sk->bCnt = i;
@@ -1254,7 +1256,7 @@ init_tree(skein_state_t *state,
 
 int
 init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
-           int stateBits, char *paramStr)
+           int stateBits, const char *paramStr)
 {
     Py_buffer buf = {0};
     Py_buffer key = {0};
