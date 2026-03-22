@@ -397,7 +397,7 @@ class TestThreefish128(TestThreefishBase, unittest.TestCase):
 
 if __name__ == "__main__":
     t = unittest.defaultTestLoader.loadTestsFromModule(sys.modules["__main__"])
-    r = unittest.TextTestRunner(verbosity=2)
+    r = unittest.TextTestRunner(verbosity=4)
     r.run(t)
     if hasattr(sys, "gettotalrefcount"):
         refc = sys.gettotalrefcount()
