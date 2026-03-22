@@ -167,16 +167,16 @@ void Threefish_1024_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t
     u64b_t XE = p[0xE] + key[0xE] + tweak[1];
     u64b_t XF = p[0xF] + key[0xF];
 
-    R1024_8_rounds(0);
-    R1024_8_rounds(1);
-    R1024_8_rounds(2);
-    R1024_8_rounds(3);
-    R1024_8_rounds(4);
-    R1024_8_rounds(5);
-    R1024_8_rounds(6);
-    R1024_8_rounds(7);
-    R1024_8_rounds(8);
-    R1024_8_rounds(9);
+    R1024_8_rounds(0)
+    R1024_8_rounds(1)
+    R1024_8_rounds(2)
+    R1024_8_rounds(3)
+    R1024_8_rounds(4)
+    R1024_8_rounds(5)
+    R1024_8_rounds(6)
+    R1024_8_rounds(7)
+    R1024_8_rounds(8)
+    R1024_8_rounds(9)
 
     if (feed) {
         out[0x0] = X0^p[0x0];
@@ -235,16 +235,16 @@ void Threefish_1024_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t
     u64b_t XE = c[0xE];
     u64b_t XF = c[0xF];
 
-    INV_R1024_8_rounds(9);
-    INV_R1024_8_rounds(8);
-    INV_R1024_8_rounds(7);
-    INV_R1024_8_rounds(6);
-    INV_R1024_8_rounds(5);
-    INV_R1024_8_rounds(4);
-    INV_R1024_8_rounds(3);
-    INV_R1024_8_rounds(2);
-    INV_R1024_8_rounds(1);
-    INV_R1024_8_rounds(0);
+    INV_R1024_8_rounds(9)
+    INV_R1024_8_rounds(8)
+    INV_R1024_8_rounds(7)
+    INV_R1024_8_rounds(6)
+    INV_R1024_8_rounds(5)
+    INV_R1024_8_rounds(4)
+    INV_R1024_8_rounds(3)
+    INV_R1024_8_rounds(2)
+    INV_R1024_8_rounds(1)
+    INV_R1024_8_rounds(0)
 
     out[0x0] = X0 - key[0x0];
     out[0x1] = X1 - key[0x1];

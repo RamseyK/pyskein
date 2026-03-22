@@ -771,7 +771,7 @@ skein_setstate(skeinObject *sk, PyObject *t)
     if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != 8))
         return 0;
     BYTES_TO_WORDS(&x, PyBytes_AS_STRING(buf), 1);
-    if ((x < 0) || (x > sk->state.tree_blocks))
+    if (x > sk->state.tree_blocks)
         return 0;
     sk->state.remaining_tree_blocks = x;
 
@@ -788,9 +788,12 @@ skein_setstate(skeinObject *sk, PyObject *t)
         /* stock values */
         state->block_processor = basic_processor;
         state->tree_blocks = tree_blocks;
-        state->remaining_tree_levels = --remaining_levels;
-        if (remaining_levels < 0)
+
+        // Decrementing below zero will underflow and we're done.
+        if (remaining_levels == 0)
             return 0;
+
+        state->remaining_tree_levels = --remaining_levels;
 
         /* values from tuple */
         buf = PyTuple_GET_ITEM(t, i++);
@@ -805,7 +808,7 @@ skein_setstate(skeinObject *sk, PyObject *t)
         if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != 8))
             return 0;
         BYTES_TO_WORDS(&x, PyBytes_AS_STRING(buf), 1);
-        if ((x < 0) || (x > tree_blocks))
+        if (x > tree_blocks)
             return 0;
         state->remaining_tree_blocks = x;
 
@@ -934,7 +937,7 @@ skein_digest(skeinObject *self, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "|KK:digest", &start, &stop))
         return NULL;
-    if (start < 0 || stop > len || start > stop) {
+    if (stop > len || start > stop) {
         PyErr_SetString(PyExc_ValueError,
             "digest(start, stop) has to fulfill 0<=start<=stop<=digest_size");
         return NULL;

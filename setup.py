@@ -5,6 +5,7 @@ from setuptools import Extension, setup
 
 extra_compile_args = [
     "-O0", "-g",  # debug
+    "-std=c11",
     "-fstack-protector-all",
     # Warnings
     "-Wall", "-Wextra", "-Wno-sign-compare",

@@ -134,13 +134,13 @@ class TestSkeinBase:
                 self.HASHER(**kwdict)
 
     def test_empty_init_args(self):
-        hash = self.HASHER(b"foo").digest()
-        self.assertEqual(self.HASHER(b"foo", key=b"").digest(), hash)
-        self.assertEqual(self.HASHER(b"foo", pers=b"").digest(), hash)
-        self.assertEqual(self.HASHER(b"foo", public_key=b"").digest(), hash)
-        self.assertEqual(self.HASHER(b"foo", key_id=b"").digest(), hash)
-        self.assertEqual(self.HASHER(b"foo", nonce=b"").digest(), hash)
-        self.assertEqual(self.HASHER(b"foo", pers=b"", nonce=b"").digest(), hash)
+        hdigest = self.HASHER(b"foo").digest()
+        self.assertEqual(self.HASHER(b"foo", key=b"").digest(), hdigest)
+        self.assertEqual(self.HASHER(b"foo", pers=b"").digest(), hdigest)
+        self.assertEqual(self.HASHER(b"foo", public_key=b"").digest(), hdigest)
+        self.assertEqual(self.HASHER(b"foo", key_id=b"").digest(), hdigest)
+        self.assertEqual(self.HASHER(b"foo", nonce=b"").digest(), hdigest)
+        self.assertEqual(self.HASHER(b"foo", pers=b"", nonce=b"").digest(), hdigest)
 
     def test_keyword_only(self):
         self.assertRaises(TypeError, self.HASHER, b"foo", 512, b"bar")
