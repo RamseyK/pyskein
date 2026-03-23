@@ -381,11 +381,13 @@ tree_block_processor(skein_state_t *state,
             /* if there are enough blocks, prepare a second state */
             if (count > 2*n+1) {  /* i.e. >= 2*tree_blocks */
                 if (state2 == NULL) {
-                    if ((state2=PyMem_Malloc(sizeof(skein_state_t))) == NULL) {
+                    state2 = PyMem_Malloc(sizeof(skein_state_t));
+                    if (state2 == NULL) {
                         PyErr_SetNone(PyExc_MemoryError);
                         return 0;
                     }
-                    if ((args=PyMem_Malloc(sizeof(struct args_t))) == NULL) {
+                    args = PyMem_Malloc(sizeof(struct args_t));
+                    if (args == NULL) {
                         PyMem_Free(state2);
                         PyErr_SetNone(PyExc_MemoryError);
                         return 0;
@@ -467,7 +469,7 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
     u64b_t        n = 0;
     u64b_t        offset=0;
     u64b_t        X[SKEIN_MAX_STATE_WORDS] = {0};
-    skein_state_t saved_state;
+    skein_state_t saved_state = {0};
     u08b_t        saved_b[SKEIN_MAX_BLOCK_BYTES] = {0};
     u08b_t        shift = 0;
 
@@ -790,7 +792,8 @@ skein_setstate(skeinObject *sk, PyObject *t)
     state = &sk->state;
     while (1) {
         /* allocate new level */
-        if ((state->next_tree_level=PyMem_Malloc(sizeof(skein_state_t)))==NULL)
+        state->next_tree_level = PyMem_Malloc(sizeof(skein_state_t));
+        if (state->next_tree_level == NULL)
             return 0;
         state = state->next_tree_level;
         state->next_tree_level = NULL;  /* termination in case of error */
