@@ -495,6 +495,24 @@ finalize_tree(skein_state_t *state, skein_state_t *target_state,
         *target_state = *state;
 }
 
+/*
+ * output_hash — generate digest bytes [start, stop) from a finalised state.
+ *
+ * Skein uses an "output transformation" (spec §2.3) to turn the final chaining
+ * value into an arbitrarily long output stream.  The construction is:
+ *
+ *   for counter i = 0, 1, 2, …:
+ *       output_block_i = UBI(final_state, i, type=OUT)
+ *
+ * Each 8-byte counter value is compressed independently with the FIRST|FINAL
+ * type-OUT tweak, using the message-phase final chaining value as the key.
+ * Because each call uses a distinct counter-based tweak, the output blocks are
+ * independent, which gives Skein XOF (extendable output function) behaviour.
+ *
+ * The state is saved before finalisation and restored afterward so that
+ * digest() can be called multiple times on the same hash object without
+ * advancing its position (non-destructive output).
+ */
 void
 output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
 {
@@ -505,20 +523,23 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
     u08b_t        saved_b[SKEIN_MAX_BLOCK_BYTES] = {0};
     u08b_t        shift = 0;
 
-    /* save X and b */
+    /* save X and b so digest() is non-destructive */
     saved_state = sk->state;
     memcpy(saved_b, sk->b, sizeof(saved_b));
 
-    /* process the final block */
+    /* finalise message processing (sets FINAL flag, zero-pads, compresses) */
     if (sk->state.next_tree_level == NULL)
         HASH_FINALIZE(sk)
     else {
+        /* for tree hashing, switch to the basic processor then propagate up */
         sk->state.block_processor = sk->state.next_tree_level->block_processor;
         HASH_FINALIZE(sk);
         finalize_tree(&sk->state, &sk->state, sk->stateBytes);
     }
 
-    /* run Threefish in "counter mode" to generate output */
+    /* counter-mode output: encrypt each 8-byte counter with the final state as
+       key.  X holds the final chaining value and is reloaded before each block
+       so every counter block is encrypted with the same key independently. */
     memcpy(X, sk->state.X, sizeof(X)); /* keep a local copy */
     memset(sk->b, 0, sizeof(sk->b));   /* buffer for output counter */
     shift = start%sk->stateBytes;
@@ -529,7 +550,7 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
         if (n > sk->stateBytes)
             n = sk->stateBytes;
         if (shift) {
-            /* first block needs to be shifted */
+            /* first block: copy only the bytes within [start, …) */
             WORDS_TO_BYTES(sk->b, sk->state.X, n);
             memcpy(hashVal, sk->b+shift, n-shift);
             memset(sk->b, 0, sizeof(sk->b));   /* clear buffer again */
@@ -539,9 +560,10 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
             WORDS_TO_BYTES(hashVal+offset, sk->state.X, n);
             offset += n;
         }
-        memcpy(sk->state.X, X, sizeof(X)); /* restore counter mode key */
+        memcpy(sk->state.X, X, sizeof(X)); /* restore counter-mode key */
     }
-    /* set low bits to 0 if last byte is incomplete */
+    /* if digest_bits is not a multiple of 8, zero the unused low bits of the
+       last byte to match the spec's bit-oriented output convention */
     if (8*stop > sk->digestBits) {
         n = 8*stop - sk->digestBits;       /* number of bits to clear */
         hashVal[offset-1] &= ~((1U<<n)-1);
@@ -558,7 +580,42 @@ error:  assert(0);
 }
 
 
-/* Skein block hashing function */
+/*
+ * Skein block hashing functions (UBI compression)
+ *
+ * Each function implements one UBI call's inner loop.  The loop processes
+ * `count` full blocks of `increment` bytes each.
+ *
+ * Per-block operations:
+ *
+ *   T[0] += increment
+ *     T[0] is the cumulative byte-position counter (spec §2.2.1).  Adding the
+ *     block size makes every block's tweak (T[0], T[1]) unique within the call,
+ *     which is the core property that gives UBI its security proof.
+ *
+ *   T[2] = T[0] ^ T[1]
+ *     Threefish uses 3 internal tweak words but the state stores only T[0] and
+ *     T[1].  T[2] = T[0]^T[1] is the "extended tweak parity" (spec §2.2.1),
+ *     recomputed here so the key-injection macro (I256/I512/I1024) can rotate
+ *     through all three tweak words with a simple modulo-3 index.
+ *
+ *   X[N] = X[0]^...^X[N-1] ^ SKEIN_KS_PARITY
+ *     Threefish's key schedule needs N+1 words but only N are the actual
+ *     chaining value.  The (N+1)th word is derived from the XOR of all N
+ *     chaining words plus the C240 parity constant (spec §2.2.4).  This
+ *     ensures every subkey injection uses a distinct value, breaking the
+ *     symmetry that would otherwise permit related-key attacks.
+ *
+ *   Threefish_*_encrypt(X, T, w, X, 1)
+ *     Called with feed=1 (UBI mode): output = E_K(m) XOR m, where K=X
+ *     (chaining value used as Threefish key).  The result replaces X in-place,
+ *     becoming the new chaining value.  This feed-forward construction ensures
+ *     the compression is one-way.
+ *
+ *   T[1] &= ~SKEIN_T1_FLAG_FIRST
+ *     Clear the FIRST flag after the first block so subsequent blocks in the
+ *     same UBI call are not incorrectly tagged as first blocks.
+ */
 
 int
 Skein_256_Process_Block(skein_state_t *state,
@@ -578,10 +635,10 @@ Skein_256_Process_Block(skein_state_t *state,
         T[0] += increment;
         T[2] = T[0] ^ T[1];
 
-        /* compute the missing key schedule value */
+        /* compute the (N+1)th key schedule word from the parity constraint */
         X[4] = X[0] ^ X[1] ^ X[2] ^ X[3] ^ SKEIN_KS_PARITY;
 
-        /* feed block */
+        /* UBI compression: convert block to words and run Threefish feed-forward */
         BYTES_TO_WORDS(w, data, WCNT);
         Threefish_256_encrypt(X, T, w, X, 1);
 
@@ -610,11 +667,11 @@ Skein_512_Process_Block(skein_state_t *state,
         T[0] += increment;
         T[2] = T[0] ^ T[1];
 
-        /* compute the missing key schedule value */
+        /* compute the (N+1)th key schedule word from the parity constraint */
         X[8] = X[0] ^ X[1] ^ X[2] ^ X[3] ^
                X[4] ^ X[5] ^ X[6] ^ X[7] ^ SKEIN_KS_PARITY;
 
-        /* feed block */
+        /* UBI compression: convert block to words and run Threefish feed-forward */
         BYTES_TO_WORDS(w, data, WCNT);
         Threefish_512_encrypt(X, T, w, X, 1);
 
@@ -643,13 +700,13 @@ Skein_1024_Process_Block(skein_state_t *state,
         T[0] += increment;
         T[2]  = T[0] ^ T[1];
 
-        /* compute the missing key schedule value */
+        /* compute the (N+1)th key schedule word from the parity constraint */
         X[16] = X[ 0] ^ X[ 1] ^ X[ 2] ^ X[ 3] ^
                 X[ 4] ^ X[ 5] ^ X[ 6] ^ X[ 7] ^
                 X[ 8] ^ X[ 9] ^ X[10] ^ X[11] ^
                 X[12] ^ X[13] ^ X[14] ^ X[15] ^ SKEIN_KS_PARITY;
 
-        /* feed block */
+        /* UBI compression: convert block to words and run Threefish feed-forward */
         BYTES_TO_WORDS(w, data, WCNT);
         Threefish_1024_encrypt(X, T, w, X, 1);
 
@@ -1410,25 +1467,43 @@ init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
         Py_CLEAR(seq);
     }
 
-    /* initialize skein object */
+    /* initialize skein object — all-zero chaining value before any UBI call */
     memset(new_obj->state.X, 0, sizeof(new_obj->state.X));
     new_obj->digestBits = digestBits;
     new_obj->stateBytes = stateBits / 8;
     new_obj->hashed_bytes = 0;
     new_obj->missing_bits = 0;
 
-    /* hash key input if present */
+    /*
+     * UBI chaining sequence (spec §2.1, Fig. 1):
+     *
+     * Each input type is processed through a separate UBI call in a fixed
+     * order.  The output chaining value of one call feeds the key (chaining
+     * state) for the next.  Domain separation comes from the block-type field
+     * in the tweak, so even identical byte strings for different inputs produce
+     * unrelated chaining values.
+     *
+     * Order: key → config → personalization → public-key → key-id → nonce →
+     *        message → (output, done separately in output_hash)
+     *
+     * The config block is always present; all others are conditional.  It
+     * encodes the magic "SHA3" marker, protocol version, output length, and
+     * tree parameters, binding every digest to these parameters.
+     */
+
+    /* optional key (for MAC / KDF use cases) */
     if (key.buf && key.len)
         HASH_BLOCKS(new_obj, key.buf, key.len, KEY)
 
-    /* hash config block */
+    /* mandatory config block: "SHA3"\x01\x00 + digest_bits (8 bytes) +
+       tree params (3 bytes); processed as a single FIRST|FINAL block */
     WORDS_TO_BYTES(cfg_block+8, &digestBits, 8);
     cfg_block[16] = tree_leaf;
     cfg_block[17] = tree_fan;
     cfg_block[18] = tree_max;
     HASH_BLOCK(new_obj, cfg_block, 32, CFG)
 
-    /* hash remaining inputs types */
+    /* optional additional input types */
     if (pers.buf && pers.len)
         HASH_BLOCKS(new_obj, pers.buf, pers.len, PERS);
     if (pk.buf && pk.len)
@@ -1438,7 +1513,7 @@ init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
     if (nonce.buf && nonce.len)
         HASH_BLOCKS(new_obj, nonce.buf, nonce.len, NONCE);
 
-    /* initialize message hashing */
+    /* begin the message UBI call; caller will stream message data via update() */
     HASH_INIT(new_obj, MSG);
     if (tree_max)
         init_tree(&new_obj->state, tree_leaf, tree_fan, tree_max);
@@ -1572,7 +1647,18 @@ threefish_new(PyObject *self, PyObject *args)
     new_obj->lock = (PyMutex){0};
 #endif
 
-    /* precompute key schedule */
+    /*
+     * Precompute the key schedule (kw[] layout, see threefish.h).
+     *
+     * kw[0..1]  = tweak words T0, T1 (parsed from `tweak`)
+     * kw[2]     = T2 = T0^T1  (extended tweak parity; recomputed each block
+     *                           when used inside Skein, but fixed here for the
+     *                           standalone Threefish object)
+     * kw[3..]   = key words k0..k_{N-1}
+     * kw[3+N]   = k_N = SKEIN_KS_PARITY ^ k0 ^ ... ^ k_{N-1}
+     *                   (extra key word derived via the parity constraint so
+     *                    the XOR of all N+1 subkeys equals SKEIN_KS_PARITY)
+     */
     BYTES_TO_WORDS(new_obj->kw, tweak.buf, 2);
     BYTES_TO_WORDS(new_obj->kw+3, key.buf, key.len/8);
     new_obj->kw[2] = new_obj->kw[0] ^ new_obj->kw[1];

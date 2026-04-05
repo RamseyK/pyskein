@@ -26,6 +26,25 @@
 typedef unsigned char u08b_t;             /*  8-bit unsigned integer */
 typedef PY_UINT64_T   u64b_t;             /* 64-bit unsigned integer */
 
+/*
+ * Public interface
+ *
+ * Threefish is the tweakable block cipher at the heart of Skein.  It uses
+ * an ARX (Add-Rotate-XOR) design: no S-boxes, purely 64-bit word operations,
+ * so it maps efficiently to modern 64-bit hardware.
+ *
+ * The three variants differ only in word count and round count:
+ *   Threefish-256:   4 words,  9 groups × 8 rounds = 72 rounds
+ *   Threefish-512:   8 words,  9 groups × 8 rounds = 72 rounds
+ *   Threefish-1024: 16 words, 10 groups × 8 rounds = 80 rounds
+ *
+ * The `feed` flag selects between two modes:
+ *   feed=0  plain block cipher  (used by the standalone threefish Python object)
+ *   feed=1  UBI compression     (used internally by Skein: output = E(m) XOR m,
+ *                                the Matyas-Meyer-Oseas feed-forward construction
+ *                                that turns Threefish into a one-way function)
+ */
+
 /* public interface */
 
 void Threefish_256_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out, int feed);
@@ -37,7 +56,15 @@ void Threefish_512_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
 void Threefish_1024_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out);
 
 
-/* Rotation constants */
+/*
+ * Rotation constants
+ *
+ * These bit-rotation amounts are the result of the Skein designers'
+ * exhaustive search for values that maximise the minimum number of active
+ * S-boxes (MDS bound) across all 8 rounds of a group.  Different amounts
+ * are used for each of the 8 round positions within a group to prevent
+ * slide attacks; they repeat with the 8-round period.
+ */
 
 enum {
     /* Threefish-256 */
@@ -80,16 +107,53 @@ enum {
 };
 
 
-/* Abbreviations */
-
+/*
+ * Abbreviations
+ *
+ * The key-schedule array kw[] is laid out as:
+ *   kw[0]   = T0  (tweak word 0)
+ *   kw[1]   = T1  (tweak word 1)
+ *   kw[2]   = T2 = T0^T1  (extended tweak parity; precomputed so the key
+ *                           injection macro can cycle through all 3 tweak words
+ *                           with a simple modulo-3 rotation)
+ *   kw[3]   = k0  (first key word)
+ *   ...
+ *   kw[3+N-1] = k_{N-1}
+ *   kw[3+N]   = k_N = SKEIN_KS_PARITY ^ k0 ^ ... ^ k_{N-1}
+ *                     (extra key word ensuring the key injections are all
+ *                      distinct; its value is fixed by the parity constraint)
+ *
+ * ts points to kw[0] for tweak access; ks points to kw[3] for key access.
+ */
 #define ks (kw+3)
 #define ts (kw)
 
+/* 64-bit left/right rotations — the "R" in ARX */
 #define RotL_64(x, N) (((x)<<(N))|((x)>>(64-(N))))
 #define RotR_64(x, N) (((x)>>(N))|((x)<<(64-(N))))
 
 
-/* Threefish-256 rounds */
+/*
+ * Threefish-256 rounds
+ *
+ * R256: one MIX step on a pair of 64-bit words.
+ *   step 1  X_even += X_odd          (add: mixes the two words)
+ *   step 2  X_odd   = RotL(X_odd, r) (rotate: prevents slide attacks)
+ *   step 3  X_odd  ^= X_even         (XOR: finalises the diffusion)
+ * This ARX pattern gives full 64-bit diffusion in two operations per pair.
+ * Each R256 call operates on two independent pairs simultaneously.
+ *
+ * I256: key injection after every 4 rounds (i.e., twice per 8-round group).
+ * The key words are rotated cyclically so each injection uses a different
+ * subkey.  The tweak is injected only into words 1 and 2 (spec §2.2.2).
+ * The last word also receives the subkey injection counter (R)+1, binding
+ * every injection to its position in the sequence and preventing related-key
+ * attacks.
+ *
+ * R256_8_rounds: one complete 8-round group.  The word permutation alternates
+ * between (0,1,2,3) and (0,3,2,1) MIX pairings to spread diffusion across
+ * all word pairs over the course of multiple rounds.
+ */
 
 #define R256(p0, p1, p2, p3, ROT)                                    \
     X##p0 += X##p1; X##p1 = RotL_64(X##p1, ROT##_0); X##p1 ^= X##p0; \
@@ -113,10 +177,12 @@ enum {
     R256(0, 3, 2, 1, R_256_7); \
     I256(2*(R)+1);
 
+/* Inverse MIX: undo XOR then undo the rotated-add (subtract after un-rotate) */
 #define INV_R256(p0, p1, p2, p3, ROT)                      \
     X##p1 = RotR_64(X##p0^X##p1, ROT##_0); X##p0 -= X##p1; \
     X##p3 = RotR_64(X##p2^X##p3, ROT##_1); X##p2 -= X##p3;
 
+/* Inverse key injection: subtract the same subkeys that were added */
 #define INV_I256(R)                      \
     X0 -= key[((R)+1)%5];                 \
     X1 -= key[((R)+2)%5] + tweak[((R)+1)%3]; \
@@ -136,7 +202,17 @@ enum {
     INV_R256(0, 1, 2, 3, R_256_0);
 
 
-/* Threefish-512 rounds */
+/*
+ * Threefish-512 rounds
+ *
+ * Same ARX structure as -256, scaled to 8 words (4 MIX pairs per round).
+ * The word permutation changes each round to ensure every word pair is
+ * mixed within one 8-round group.
+ *
+ * Tweak is injected into words N-3 and N-2 (words 5 and 6 for N=8),
+ * matching the spec's requirement that tweak words go into the last few
+ * non-terminal words.
+ */
 
 #define R512(p0, p1, p2, p3, p4, p5, p6, p7, ROT)                    \
     X##p0 += X##p1; X##p1 = RotL_64(X##p1, ROT##_0); X##p1 ^= X##p0; \
@@ -195,7 +271,13 @@ enum {
     INV_R512(0, 1, 2, 3, 4, 5, 6, 7, R_512_0);
 
 
-/* Threefish-1024 rounds */
+/*
+ * Threefish-1024 rounds
+ *
+ * 16 words, 10 groups × 8 rounds = 80 rounds (more rounds than -256/-512
+ * because larger states need more mixing for equivalent security).
+ * Tweak words go into positions N-3=13 and N-2=14.
+ */
 
 #define R1024(p0, p1, p2, p3, p4, p5, p6, p7,                        \
               p8, p9, pA, pB, pC, pD, pE, pF, ROT)                   \

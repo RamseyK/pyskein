@@ -102,8 +102,26 @@ typedef struct {
 } threefishObject;
 
 
-/* abbreviations */
-
+/*
+ * UBI chaining macros
+ *
+ * Skein processes each input type (key, config, message, …) through a
+ * separate UBI (Unique Block Iteration) call.  A UBI call is a sequence of
+ * Threefish compressions where:
+ *   T[0] is a running byte count (position counter), making each block's
+ *        tweak unique within the call, which is essential for UBI's security.
+ *   T[1] carries control flags (FIRST, FINAL, BITPAD) and a 6-bit block-type
+ *        field in bits 56-62, providing domain separation between input types
+ *        so that collisions cannot be constructed across different call types.
+ *
+ * HASH_INIT   — begin a new UBI call: zero the position counter, set the
+ *               FIRST flag and block type, reset the byte buffer.
+ * HASH_FINALIZE — end a UBI call: set the FINAL flag (and BITPAD if the last
+ *               byte is partial), zero-pad the partial block, then process it.
+ * HASH_BLOCK  — process a single, self-contained block (FIRST|FINAL together):
+ *               used for fixed-size inputs like the configuration block.
+ * HASH_BLOCKS — shorthand for HASH_INIT + streaming update + HASH_FINALIZE.
+ */
 #define HASH_INIT(sk, type) \
 { \
     sk->state.T[0] = 0; \
@@ -139,8 +157,30 @@ typedef struct {
 }
 
 
-/* numerical constants */
-
+/*
+ * Numerical constants
+ *
+ * SKEIN_KS_PARITY: the "C240" constant from spec §2.2.4, value
+ *   0x1BD11BDAA9FC1A22.  It is XOR'd with all key words to produce the extra
+ *   (N+1)th key schedule word, ensuring the XOR of every subkey injection for
+ *   a given word position is always this constant rather than zero.  This
+ *   breaks the symmetry that would otherwise allow related-key attacks.
+ *
+ * T1 flag bits (in the high 64-bit tweak word T1):
+ *   FIRST  (bit 62) — set only for the first block of a UBI call, preventing
+ *                     extension attacks by tying the block to its position.
+ *   FINAL  (bit 63) — set only for the last block, preventing length-extension
+ *                     by making the terminal block distinguishable.
+ *   BITPAD (bit 55) — set when the last byte is incomplete (partial-byte
+ *                     input), so the pad marker can be placed correctly.
+ *
+ * SKEIN_T1_POS_LEVEL: bit position of the tree level field in T1, used to
+ *   increment the level counter when propagating a tree-hash node upward.
+ *
+ * Block type constants: occupy bits 56-61 of T1; provide domain separation
+ *   between the different input types in the UBI chain so that an attacker
+ *   cannot reinterpret a key block as a message block or vice versa.
+ */
 #define U64B_CONST(high, low)  (((u64b_t)high << 32) | (u64b_t)low)
 #define SKEIN_KS_PARITY        U64B_CONST(0x1BD11BDA, 0xA9FC1A22)
 #define SKEIN_T1_FLAG_FIRST    U64B_CONST(0x40000000, 0x00000000)

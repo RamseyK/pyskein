@@ -26,11 +26,19 @@
 
 void Threefish_256_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
+    /* Initial key injection (subkey 0): add key words to plaintext before any
+       MIX rounds.  This "pre-whitening" ensures the attacker cannot observe
+       the first round's inputs even if the plaintext is known.  Tweak words T0
+       and T1 are injected into words 1 and 2 (spec §2.2.2). */
     u64b_t X0 = p[0] + key[0];
     u64b_t X1 = p[1] + key[1] + tweak[0];
     u64b_t X2 = p[2] + key[2] + tweak[1];
     u64b_t X3 = p[3] + key[3];
 
+    /* 9 groups of 8 rounds = 72 rounds total.  Each group ends with two key
+       injections (via I256 inside R256_8_rounds), making 18 subkey additions
+       in all.  The round index R is passed to I256 so each subkey rotation
+       is unique. */
     R256_8_rounds(0)
     R256_8_rounds(1)
     R256_8_rounds(2)
@@ -41,6 +49,9 @@ void Threefish_256_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     R256_8_rounds(7)
     R256_8_rounds(8)
 
+    /* feed=1: UBI mode — XOR ciphertext with original plaintext to form the
+       one-way compression output (Matyas-Meyer-Oseas construction).
+       feed=0: plain Threefish block cipher output. */
     if (feed) {
         out[0] = X0^p[0]; out[1] = X1^p[1]; out[2] = X2^p[2]; out[3] = X3^p[3];
     }
@@ -56,6 +67,8 @@ void Threefish_256_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     u64b_t X2 = c[2];
     u64b_t X3 = c[3];
 
+    /* Apply 9 inverse round groups in reverse order — each undoes the key
+       injection first (INV_I256) then undoes the MIX rounds (INV_R256). */
     INV_R256_8_rounds(8)
     INV_R256_8_rounds(7)
     INV_R256_8_rounds(6)
@@ -66,6 +79,7 @@ void Threefish_256_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     INV_R256_8_rounds(1)
     INV_R256_8_rounds(0)
 
+    /* Undo the initial key injection (subkey 0). */
     out[0] = X0 - key[0];
     out[1] = X1 - key[1] - tweak[0];
     out[2] = X2 - key[2] - tweak[1];
@@ -75,6 +89,8 @@ void Threefish_256_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
 
 void Threefish_512_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
+    /* Initial key injection (subkey 0).  For 8 words, tweak words go into
+       positions N-3=5 and N-2=6 (spec §2.2.2). */
     u64b_t X0 = p[0] + key[0];
     u64b_t X1 = p[1] + key[1];
     u64b_t X2 = p[2] + key[2];
@@ -84,6 +100,7 @@ void Threefish_512_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
     u64b_t X6 = p[6] + key[6] + tweak[1];
     u64b_t X7 = p[7] + key[7];
 
+    /* 9 groups × 8 rounds = 72 rounds total. */
     R512_8_rounds(0)
     R512_8_rounds(1)
     R512_8_rounds(2)
@@ -150,6 +167,8 @@ void Threefish_512_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t 
 
 void Threefish_1024_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
+    /* Initial key injection (subkey 0).  For 16 words, tweak words go into
+       positions N-3=13 and N-2=14 (spec §2.2.2). */
     u64b_t X0 = p[0x0] + key[0x0];
     u64b_t X1 = p[0x1] + key[0x1];
     u64b_t X2 = p[0x2] + key[0x2];
@@ -167,6 +186,8 @@ void Threefish_1024_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t
     u64b_t XE = p[0xE] + key[0xE] + tweak[1];
     u64b_t XF = p[0xF] + key[0xF];
 
+    /* 10 groups × 8 rounds = 80 rounds total (extra group vs. -256/-512
+       because the larger state needs more mixing for equivalent security). */
     R1024_8_rounds(0)
     R1024_8_rounds(1)
     R1024_8_rounds(2)

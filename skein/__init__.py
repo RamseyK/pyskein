@@ -28,6 +28,10 @@ from _skein import skein256, skein512, skein1024, threefish  # noqa
 class Random(random.Random):
     _BPF = random.BPF
     _RECIP_BPF = random.RECIP_BPF
+    # _TWEAK: 16-byte Threefish tweak whose last byte is 0x3f = 63, the
+    # numeric value of SKEIN_BLOCK_TYPE_OUT.  Using the output-type tweak
+    # ties this PRNG to Skein's counter-mode output stage (spec §2.3),
+    # ensuring its keystream is domain-separated from other Threefish uses.
     _TWEAK = bytes(15) + b"\x3f"
     _random = random
 
@@ -40,6 +44,10 @@ class Random(random.Random):
         self._hasher = hasher
         self._state_bytes = hasher().block_size
         self._state = bytes(self._state_bytes)
+        # Two fixed counter blocks: 0x00…00 and 0x01 00…00 (little-endian 0
+        # and 1).  Encrypting both under the same Threefish key (state) yields
+        # two independent output blocks per state advance, doubling throughput
+        # without an extra key derivation step.
         self._counter0 = bytes(self._state_bytes)
         self._counter1 = b"\1" + bytes(self._state_bytes - 1)
         super().__init__(seed)
@@ -53,6 +61,9 @@ class Random(random.Random):
         if not isinstance(seed, bytes):
             r = self._random.Random(seed)
             seed = bytes(r.randrange(256) for _ in range(self._state_bytes))
+        # Mix the new seed into the existing state via Skein rather than
+        # replacing it outright, so seeding can be called multiple times to
+        # accumulate entropy without resetting the PRNG to a known state.
         self._state = self._hasher(self._state + seed).digest()
         self._buffer = b""
         self._number = 0
@@ -72,6 +83,12 @@ class Random(random.Random):
             chunks = [self._buffer]
             blocks = ((n - len(self._buffer) - 1) // self._state_bytes) + 1
             for _ in range(1, blocks + 1):
+                # Each iteration uses the current state as the Threefish key.
+                # Encrypting counter0 produces the next state (advancing the
+                # internal RNG); encrypting counter1 produces output bytes.
+                # This two-block scheme keeps state and output derivation
+                # independent, preventing an observer of output from recovering
+                # the state.
                 output = threefish(self._state, self._TWEAK).encrypt_block
                 self._state = output(self._counter0)
                 chunks.append(output(self._counter1))
