@@ -2,6 +2,10 @@ Release history and non-trivial changes:
 
 PySkein 2.0 (In Development)
 ------------------------
+    - Fixed numerous bugs, memory safety issues, and undefined behavior
+
+    - Added support for Python free-threading
+
     - Updated to use modern packaging standards (pyproject.toml)
 
     - Dropped support for Python versions lower than 3.11

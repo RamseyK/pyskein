@@ -13,19 +13,11 @@ extra_compile_args = [
     "-Wimplicit-fallthrough",
     # Position-independent
     "-fPIE",
-    # NULL pointers must not be treated as undefined behavior
     "-fno-delete-null-pointer-checks",
-
     "-fno-strict-aliasing",
     # Do not use language extensions
     "-pedantic"
 ]
-
-# Memory accesses *must* be aligned for arm64
-# if platform.machine() in ("arm64", "aarch64"):
-#     extra_compile_args.append("-mstrict-align")
-#     extra_compile_args.append("-mstackrealign")
-#     extra_compile_args.append("-fpack-struct=16")
 
 ext = Extension("_skein",
                 sources=["skein/threefish.c", "skein/_skeinmodule.c"],
