@@ -7,6 +7,7 @@ import unittest
 from itertools import combinations
 
 import _skein
+
 import skein
 
 KATFILE = str(pathlib.Path(__file__).parent / "skein_golden_kat.txt")
@@ -77,7 +78,7 @@ class SkeinTestMixin:
         self.assertEqual(hasher2.digest(), self.hasher.digest())
 
     def test_repr(self):
-        self.assertTrue(repr(self.hasher).startswith("<Skein-%s hash object at " % self.STATE_BITS))
+        self.assertTrue(repr(self.hasher).startswith(f"<Skein-{self.STATE_BITS} hash object at "))
 
     def test_hashed_count(self):
         self.hasher.update(b"123")
@@ -297,8 +298,7 @@ class TestSkeinKAT(unittest.TestCase):
             hasher.update(by(msgtxt), bits=msg_bits)
             self.assertEqual(hasher.digest(), by(hashtxt))
             k += 1
-        print("\n{0}/{1} known answer tests succeeded ({2} skipped)".format(
-              k, n, n-k))
+        print(f"\n{k}/{n} known answer tests succeeded ({n-k} skipped)")
 
 
 def by(txt):

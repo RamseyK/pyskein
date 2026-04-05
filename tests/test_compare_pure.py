@@ -2,8 +2,9 @@ import unittest
 from itertools import combinations
 from random import randint, randrange
 
-import skein
 import skein512
+
+import skein
 
 
 class TestThreefish(unittest.TestCase):
