@@ -1,5 +1,5 @@
-PySkein 1.0 - The Skein Hash Algorithm for Python
-=================================================
+PySkein - The Skein Hash Algorithm for Python
+=============================================
 
 PySkein is an extension module for Python, implementing the
 `Skein hash algorithm`_, one of the five finalists of the
@@ -27,7 +27,7 @@ Its highlights are:
   available for encryption and decryption on its own
 
 .. _`GNU General Public License`: http://www.gnu.org/licenses/gpl-3.0.html
-.. _`Skein hash algorithm`: http://www.skein-hash.info
+.. _`Skein hash algorithm`: https://en.wikipedia.org/wiki/Skein_(hash_function)
 .. _`NIST SHA-3 Competition`: http://csrc.nist.gov/groups/ST/hash/sha-3/index.html
 
 

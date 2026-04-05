@@ -28,13 +28,13 @@ typedef PY_UINT64_T   u64b_t;             /* 64-bit unsigned integer */
 
 /* public interface */
 
-void Threefish_256_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *w, u64b_t *out, int feed);
-void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *w, u64b_t *out, int feed);
-void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *w, u64b_t *out, int feed);
+void Threefish_256_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out, int feed);
+void Threefish_512_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out, int feed);
+void Threefish_1024_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out, int feed);
 
-void Threefish_256_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *w, u64b_t *out);
-void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *w, u64b_t *out);
-void Threefish_1024_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *w, u64b_t *out);
+void Threefish_256_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out);
+void Threefish_512_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out);
+void Threefish_1024_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *w, u64b_t *out);
 
 
 /* Rotation constants */

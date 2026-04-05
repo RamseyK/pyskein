@@ -21,8 +21,9 @@
 ### Skein-PRNG ###
 ###
 import random
+from typing import Union
 
-from _skein import skein256, skein512, skein1024, threefish
+from _skein import skein256, skein512, skein1024, threefish  # noqa
 
 
 class Random(random.Random):
@@ -58,7 +59,7 @@ class Random(random.Random):
         self._number = 0
         self._bits = 0
 
-    def read(self, n):
+    def read(self, n: int):
         """Return n random bytes.
 
         The stream of random bytes is reproducible for a given seed:
@@ -122,7 +123,7 @@ class RandomBytes:
         h = self._hasher(self._state + seed)
         self._state = h.digest()
 
-    def read(self, n):
+    def read(self, n: int):
         """Return 'n' pseudo-random bytes"""
         h = self._hasher(self._state, digest_bits=8 * (self.state_size + n))
         self._state = h.digest(0, self.state_size)
@@ -137,18 +138,18 @@ class RandomBytes:
 class StreamCipher:
     DIGEST_BITS = 2 ** 64 - 1
 
-    def __init__(self, key, nonce=b"", hasher=skein512):
+    def __init__(self, key: bytes, nonce: bytes = b"", hasher=skein512):
         self._h = hasher(key=key, nonce=nonce, digest_bits=self.DIGEST_BITS)
         self._pos = 0
 
-    def keystream(self, n):
+    def keystream(self, n: int):
         """Return 'n' bytes from the keystream"""
         newpos = self._pos + n
         stream = self._h.digest(self._pos, newpos)
         self._pos = newpos
         return stream
 
-    def encrypt(self, plain):
+    def encrypt(self, plain: Union[str, bytes]):
         """Encrypt bytes object 'plain' with keystream"""
         stream = self.keystream(len(plain))
         try:

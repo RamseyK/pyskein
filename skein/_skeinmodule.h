@@ -31,6 +31,17 @@
 #define  SKEIN_MAX_BLOCK_BYTES  SKEIN_1024_BLOCK_BYTES
 
 
+/* Free-threading support: per-object mutex, present only in GIL-disabled builds.
+   In regular (GIL) builds the lock macros are no-ops — the GIL is sufficient. */
+#ifdef Py_GIL_DISABLED
+#  define SKEIN_LOCK(obj)   PyMutex_Lock(&(obj)->lock)
+#  define SKEIN_UNLOCK(obj) PyMutex_Unlock(&(obj)->lock)
+#else
+#  define SKEIN_LOCK(obj)   ((void)0)
+#  define SKEIN_UNLOCK(obj) ((void)0)
+#endif
+
+
 /* Python object definitions */
 
 static PyTypeObject skeinType;
@@ -70,6 +81,10 @@ typedef struct {
     u08b_t        bCnt;
     u08b_t        missing_bits;
         /* number of bits missing from the last byte in b */
+
+#ifdef Py_GIL_DISABLED
+    PyMutex       lock;  /* serialises concurrent method calls in free-threaded builds */
+#endif
 } skeinObject;
 
 
@@ -79,7 +94,11 @@ typedef struct {
     void(*encryptor)(u64b_t *, u64b_t *, const u64b_t *, u64b_t *, int);
     void(*decryptor)(u64b_t *, u64b_t *, const u64b_t *, u64b_t *);
     u64b_t kw[SKEIN_MAX_STATE_WORDS+4];  /* precomputed key schedule */
-    size_t blockBytes;
+    ssize_t blockBytes;
+
+#ifdef Py_GIL_DISABLED
+    PyMutex lock;  /* serialises concurrent tweak writes vs. encrypt/decrypt */
+#endif
 } threefishObject;
 
 

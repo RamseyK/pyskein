@@ -24,22 +24,22 @@
 #include "threefish.h"
 
 
-void Threefish_256_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
+void Threefish_256_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
     u64b_t X0 = p[0] + key[0];
     u64b_t X1 = p[1] + key[1] + tweak[0];
     u64b_t X2 = p[2] + key[2] + tweak[1];
     u64b_t X3 = p[3] + key[3];
 
-    R256_8_rounds(0);
-    R256_8_rounds(1);
-    R256_8_rounds(2);
-    R256_8_rounds(3);
-    R256_8_rounds(4);
-    R256_8_rounds(5);
-    R256_8_rounds(6);
-    R256_8_rounds(7);
-    R256_8_rounds(8);
+    R256_8_rounds(0)
+    R256_8_rounds(1)
+    R256_8_rounds(2)
+    R256_8_rounds(3)
+    R256_8_rounds(4)
+    R256_8_rounds(5)
+    R256_8_rounds(6)
+    R256_8_rounds(7)
+    R256_8_rounds(8)
 
     if (feed) {
         out[0] = X0^p[0]; out[1] = X1^p[1]; out[2] = X2^p[2]; out[3] = X3^p[3];
@@ -49,22 +49,22 @@ void Threefish_256_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *
     }
 }
 
-void Threefish_256_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
+void Threefish_256_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
     u64b_t X0 = c[0];
     u64b_t X1 = c[1];
     u64b_t X2 = c[2];
     u64b_t X3 = c[3];
 
-    INV_R256_8_rounds(8);
-    INV_R256_8_rounds(7);
-    INV_R256_8_rounds(6);
-    INV_R256_8_rounds(5);
-    INV_R256_8_rounds(4);
-    INV_R256_8_rounds(3);
-    INV_R256_8_rounds(2);
-    INV_R256_8_rounds(1);
-    INV_R256_8_rounds(0);
+    INV_R256_8_rounds(8)
+    INV_R256_8_rounds(7)
+    INV_R256_8_rounds(6)
+    INV_R256_8_rounds(5)
+    INV_R256_8_rounds(4)
+    INV_R256_8_rounds(3)
+    INV_R256_8_rounds(2)
+    INV_R256_8_rounds(1)
+    INV_R256_8_rounds(0)
 
     out[0] = X0 - key[0];
     out[1] = X1 - key[1] - tweak[0];
@@ -73,7 +73,7 @@ void Threefish_256_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *
 }
 
 
-void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
+void Threefish_512_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
     u64b_t X0 = p[0] + key[0];
     u64b_t X1 = p[1] + key[1];
@@ -84,15 +84,15 @@ void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *
     u64b_t X6 = p[6] + key[6] + tweak[1];
     u64b_t X7 = p[7] + key[7];
 
-    R512_8_rounds(0);
-    R512_8_rounds(1);
-    R512_8_rounds(2);
-    R512_8_rounds(3);
-    R512_8_rounds(4);
-    R512_8_rounds(5);
-    R512_8_rounds(6);
-    R512_8_rounds(7);
-    R512_8_rounds(8);
+    R512_8_rounds(0)
+    R512_8_rounds(1)
+    R512_8_rounds(2)
+    R512_8_rounds(3)
+    R512_8_rounds(4)
+    R512_8_rounds(5)
+    R512_8_rounds(6)
+    R512_8_rounds(7)
+    R512_8_rounds(8)
 
     if (feed) {
         out[0] = X0^p[0];
@@ -116,7 +116,7 @@ void Threefish_512_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *
     }
 }
 
-void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
+void Threefish_512_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
     u64b_t X0 = c[0];
     u64b_t X1 = c[1];
@@ -127,15 +127,15 @@ void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *
     u64b_t X6 = c[6];
     u64b_t X7 = c[7];
 
-    INV_R512_8_rounds(8);
-    INV_R512_8_rounds(7);
-    INV_R512_8_rounds(6);
-    INV_R512_8_rounds(5);
-    INV_R512_8_rounds(4);
-    INV_R512_8_rounds(3);
-    INV_R512_8_rounds(2);
-    INV_R512_8_rounds(1);
-    INV_R512_8_rounds(0);
+    INV_R512_8_rounds(8)
+    INV_R512_8_rounds(7)
+    INV_R512_8_rounds(6)
+    INV_R512_8_rounds(5)
+    INV_R512_8_rounds(4)
+    INV_R512_8_rounds(3)
+    INV_R512_8_rounds(2)
+    INV_R512_8_rounds(1)
+    INV_R512_8_rounds(0)
 
     out[0] = X0 - key[0];
     out[1] = X1 - key[1];
@@ -148,7 +148,7 @@ void Threefish_512_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *
 }
 
 
-void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
+void Threefish_1024_encrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *p, u64b_t *out, int feed)
 {
     u64b_t X0 = p[0x0] + key[0x0];
     u64b_t X1 = p[0x1] + key[0x1];
@@ -167,16 +167,16 @@ void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t 
     u64b_t XE = p[0xE] + key[0xE] + tweak[1];
     u64b_t XF = p[0xF] + key[0xF];
 
-    R1024_8_rounds(0);
-    R1024_8_rounds(1);
-    R1024_8_rounds(2);
-    R1024_8_rounds(3);
-    R1024_8_rounds(4);
-    R1024_8_rounds(5);
-    R1024_8_rounds(6);
-    R1024_8_rounds(7);
-    R1024_8_rounds(8);
-    R1024_8_rounds(9);
+    R1024_8_rounds(0)
+    R1024_8_rounds(1)
+    R1024_8_rounds(2)
+    R1024_8_rounds(3)
+    R1024_8_rounds(4)
+    R1024_8_rounds(5)
+    R1024_8_rounds(6)
+    R1024_8_rounds(7)
+    R1024_8_rounds(8)
+    R1024_8_rounds(9)
 
     if (feed) {
         out[0x0] = X0^p[0x0];
@@ -216,7 +216,7 @@ void Threefish_1024_encrypt(u64b_t *key, u64b_t *tweak, const u64b_t *p, u64b_t 
     }
 }
 
-void Threefish_1024_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t *out)
+void Threefish_1024_decrypt(const u64b_t *key, const u64b_t *tweak, const u64b_t *c, u64b_t *out)
 {
     u64b_t X0 = c[0x0];
     u64b_t X1 = c[0x1];
@@ -235,16 +235,16 @@ void Threefish_1024_decrypt(u64b_t *key, u64b_t *tweak, const u64b_t *c, u64b_t 
     u64b_t XE = c[0xE];
     u64b_t XF = c[0xF];
 
-    INV_R1024_8_rounds(9);
-    INV_R1024_8_rounds(8);
-    INV_R1024_8_rounds(7);
-    INV_R1024_8_rounds(6);
-    INV_R1024_8_rounds(5);
-    INV_R1024_8_rounds(4);
-    INV_R1024_8_rounds(3);
-    INV_R1024_8_rounds(2);
-    INV_R1024_8_rounds(1);
-    INV_R1024_8_rounds(0);
+    INV_R1024_8_rounds(9)
+    INV_R1024_8_rounds(8)
+    INV_R1024_8_rounds(7)
+    INV_R1024_8_rounds(6)
+    INV_R1024_8_rounds(5)
+    INV_R1024_8_rounds(4)
+    INV_R1024_8_rounds(3)
+    INV_R1024_8_rounds(2)
+    INV_R1024_8_rounds(1)
+    INV_R1024_8_rounds(0)
 
     out[0x0] = X0 - key[0x0];
     out[0x1] = X1 - key[0x1];
