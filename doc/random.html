@@ -1,146 +1,255 @@
+<!DOCTYPE html>
 
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="./">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Pseudorandom Number Generator &mdash; PySkein 1.0 documentation</title>
-    
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="PySkein 1.0 documentation" href="index.html" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Pseudorandom Number Generator &#8212; PySkein 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/default.css" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Skein Stream Cipher" href="stream.html" />
-    <link rel="prev" title="Threefish block cipher" href="threefish.html" /> 
-  </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="stream.html" title="Skein Stream Cipher"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="threefish.html" title="Threefish block cipher"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+    <link rel="prev" title="Threefish block cipher" href="threefish.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          
+
+          <div class="body" role="main">
             
-  <div class="section" id="pseudorandom-number-generator">
-<h1>Pseudorandom Number Generator<a class="headerlink" href="#pseudorandom-number-generator" title="Permalink to this headline">¶</a></h1>
-<p>PySkein contains a PRNG designed according to the Skein specification and based
-on Skein-512 by default. It is implemented in Python as a subclass of the
-standard library&#8217;s <tt class="xref py py-class docutils literal"><span class="pre">random.Random</span></tt> class and can therefore be used in
-the same way. The seed may be given as a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> object:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">skein</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;some seed value&quot;</span><span class="p">)</span>
+  <section id="pseudorandom-number-generator">
+<h1>Pseudorandom Number Generator<a class="headerlink" href="#pseudorandom-number-generator" title="Link to this heading">¶</a></h1>
+<p>PySkein provides two PRNG classes.  Both are deterministic given the same
+seed and are designed according to the Skein specification’s recommendations
+for pseudorandom generation.</p>
+<section id="skein-random">
+<h2><a class="reference internal" href="#skein.Random" title="skein.Random"><code class="xref py py-class docutils literal notranslate"><span class="pre">skein.Random</span></code></a><a class="headerlink" href="#skein-random" title="Link to this heading">¶</a></h2>
+<p>A drop-in replacement for <code class="xref py py-class docutils literal notranslate"><span class="pre">random.Random</span></code> from the standard library,
+backed by Threefish in counter mode.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="skein.Random">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">skein.</span></span><span class="sig-name descname"><span class="pre">Random</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hasher</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">skein512</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#skein.Random" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new <code class="xref py py-class docutils literal notranslate"><span class="pre">Random</span></code> instance.</p>
+<p><code class="docutils literal notranslate"><span class="pre">seed</span></code> initialises the internal state.  If <code class="docutils literal notranslate"><span class="pre">seed</span></code> is a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code> object it is mixed directly into the state using Skein.
+Any other value (integer, string, …) is first passed through
+<code class="xref py py-class docutils literal notranslate"><span class="pre">random.Random</span></code> to derive a bytes seed of the appropriate length,
+matching the behaviour of the standard library’s <code class="xref py py-class docutils literal notranslate"><span class="pre">random.Random</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">seed</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, a suitable source of system randomness is used
+(<code class="docutils literal notranslate"><span class="pre">/dev/urandom</span></code> or equivalent).</p>
+<p><code class="docutils literal notranslate"><span class="pre">hasher</span></code> selects the Skein variant: <code class="docutils literal notranslate"><span class="pre">skein256</span></code>, <code class="docutils literal notranslate"><span class="pre">skein512</span></code> (the
+default), or <code class="docutils literal notranslate"><span class="pre">skein1024</span></code>.  The internal state size equals the hasher’s
+block size (32, 64, or 128 bytes respectively).</p>
+<p>Because each <code class="docutils literal notranslate"><span class="pre">seed()</span></code> call <em>mixes</em> the new seed into the existing
+state rather than replacing it, repeated seeding accumulates entropy
+without resetting the PRNG to a known point.</p>
+</dd></dl>
+
+<p>The internal construction runs Threefish (keyed by the current state) in
+counter mode using the Skein output-type tweak.  Encrypting counter value 0
+advances the state; encrypting counter value 1 produces output bytes.  This
+two-block scheme keeps state advancement and output derivation independent,
+so an attacker who observes the output stream cannot recover the internal
+state.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">skein</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;some seed value&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
 <span class="go">0.12674259115116804</span>
 </pre></div>
 </div>
-<p>or any other hashable object - in which case <tt class="xref py py-class docutils literal"><span class="pre">random.Random</span></tt> is used
-internally to derive a <tt class="xref py py-class docutils literal"><span class="pre">bytes</span></tt> seed:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+<p>Any hashable object can be used as a seed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
 <span class="go">0.1976938882004089</span>
 </pre></div>
 </div>
-<p>The same happens when no seed is given, so that the initial state is then
-derived from a suitable system source of randomness (like /dev/urandom or the
-time):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
+<p>When no seed is given, the initial state comes from a system randomness
+source:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
-<span class="go">0.9696830103216001</span>
+<span class="go">0.9696830103216001  # different each time</span>
 </pre></div>
 </div>
-<p>You may also directly read bytes or bits from the random stream:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;seed&quot;</span><span class="p">)</span>
+<p>Additional methods beyond the standard <code class="xref py py-class docutils literal notranslate"><span class="pre">random.Random</span></code> interface:</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.read">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Random.read" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">n</span></code> pseudo-random bytes as a bytes object.  The stream is
+reproducible: for a given seed, <code class="docutils literal notranslate"><span class="pre">r.read(m)</span> <span class="pre">+</span> <span class="pre">r.read(n)</span></code> always equals
+<code class="docutils literal notranslate"><span class="pre">Random(seed).read(m</span> <span class="pre">+</span> <span class="pre">n)</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">skein</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;seed&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 <span class="go">b&#39;\xfe\xe6j\x8d\xb6&#39;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="go">9</span>
 </pre></div>
 </div>
-<p>All other methods of <tt class="xref py py-class docutils literal"><span class="pre">skein.Random</span></tt> are based on <tt class="xref py py-meth docutils literal"><span class="pre">random()</span></tt>.
-For their documentation please refer to the <a class="reference external" href="http://docs.python.org/py3k/">Python documentation</a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.getrandbits">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">getrandbits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Random.getrandbits" title="Link to this definition">¶</a></dt>
+<dd><p>Return a non-negative integer with <code class="docutils literal notranslate"><span class="pre">k</span></code> random bits.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.getstate">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">getstate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Random.getstate" title="Link to this definition">¶</a></dt>
+<dd><p>Return a snapshot of the internal state (a tuple).  Can be passed to
+<a class="reference internal" href="#Random.setstate" title="Random.setstate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setstate()</span></code></a> to restore the PRNG to this exact point.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="Random.setstate">
+<span class="sig-prename descclassname"><span class="pre">Random.</span></span><span class="sig-name descname"><span class="pre">setstate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Random.setstate" title="Link to this definition">¶</a></dt>
+<dd><p>Restore the internal state from a snapshot returned by <a class="reference internal" href="#Random.getstate" title="Random.getstate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">getstate()</span></code></a>.</p>
+</dd></dl>
+
+<p>All other methods (<code class="docutils literal notranslate"><span class="pre">random()</span></code>, <code class="docutils literal notranslate"><span class="pre">randint()</span></code>, <code class="docutils literal notranslate"><span class="pre">choice()</span></code>, etc.) are
+inherited from <code class="xref py py-class docutils literal notranslate"><span class="pre">random.Random</span></code> and documented in the
+<a class="reference external" href="https://docs.python.org/3/library/random.html">Python standard library documentation</a>.</p>
+</section>
+<section id="skein-randombytes">
+<h2><a class="reference internal" href="#skein.RandomBytes" title="skein.RandomBytes"><code class="xref py py-class docutils literal notranslate"><span class="pre">skein.RandomBytes</span></code></a><a class="headerlink" href="#skein-randombytes" title="Link to this heading">¶</a></h2>
+<p>A lower-level PRNG that exposes only the raw byte stream.  It uses a
+simpler construction than <code class="xref py py-class docutils literal notranslate"><span class="pre">Random</span></code> — Skein itself (rather than
+bare Threefish) is called at each step — which makes it better suited to
+cases where you need large amounts of pseudo-random bytes derived from a
+bytes seed, with periodic re-seeding from external entropy.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="skein.RandomBytes">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">skein.</span></span><span class="sig-name descname"><span class="pre">RandomBytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hasher</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">skein512</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#skein.RandomBytes" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new <code class="xref py py-class docutils literal notranslate"><span class="pre">RandomBytes</span></code> instance.</p>
+<p><code class="docutils literal notranslate"><span class="pre">seed</span></code> must be a <code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code> object.</p>
+<p><code class="docutils literal notranslate"><span class="pre">hasher</span></code> selects the Skein variant, defaulting to <code class="docutils literal notranslate"><span class="pre">skein512</span></code>.</p>
+<p>The internal state is initialised to all zeros and then immediately
+mixed with <code class="docutils literal notranslate"><span class="pre">seed</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="RandomBytes.seed">
+<span class="sig-prename descclassname"><span class="pre">RandomBytes.</span></span><span class="sig-name descname"><span class="pre">seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#RandomBytes.seed" title="Link to this definition">¶</a></dt>
+<dd><p>Mix additional bytes into the current state.  Can be called at any time
+to add new entropy without restarting the sequence:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">rb</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">64</span><span class="p">))</span>  <span class="c1"># periodically add OS entropy</span>
+</pre></div>
 </div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="RandomBytes.read">
+<span class="sig-prename descclassname"><span class="pre">RandomBytes.</span></span><span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#RandomBytes.read" title="Link to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">n</span></code> pseudo-random bytes.  The internal state advances with
+each call, so subsequent calls yield different bytes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">skein</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomBytes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rb</span> <span class="o">=</span> <span class="n">RandomBytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;my seed&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="go">b&#39;...&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rb</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>  <span class="c1"># different bytes</span>
+<span class="go">b&#39;...&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="RandomBytes.state_size">
+<span class="sig-prename descclassname"><span class="pre">RandomBytes.</span></span><span class="sig-name descname"><span class="pre">state_size</span></span><a class="headerlink" href="#RandomBytes.state_size" title="Link to this definition">¶</a></dt>
+<dd><p>The internal state size in bytes (32, 64, or 128, depending on the
+hasher).</p>
+</dd></dl>
+
+</section>
+</section>
 
 
           </div>
+          
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="threefish.html"
-                        title="previous chapter">Threefish block cipher</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="stream.html"
-                        title="next chapter">Skein Stream Cipher</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/random.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
+<h1 class="logo"><a href="index.html">PySkein</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="skein.html">Skein hash</a></li>
+<li class="toctree-l1"><a class="reference internal" href="threefish.html">Threefish block cipher</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Pseudorandom Number Generator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#skein-random"><code class="xref py py-class docutils literal notranslate"><span class="pre">skein.Random</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#skein-randombytes"><code class="xref py py-class docutils literal notranslate"><span class="pre">skein.RandomBytes</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="stream.html">Skein Stream Cipher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Demo Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download PySkein</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="threefish.html" title="previous chapter">Threefish block cipher</a></li>
+      <li>Next: <a href="stream.html" title="next chapter">Skein Stream Cipher</a></li>
+  </ul></li>
+</ul>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="stream.html" title="Skein Stream Cipher"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="threefish.html" title="Threefish block cipher"
-             >previous</a> |</li>
-        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2008-2013 Hagen Fürstenau.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      &#169;2008-2013 Hagen Fürstenau.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/random.rst.txt"
+          rel="nofollow">Page source</a>
     </div>
+
+    
+
+    
   </body>
 </html>

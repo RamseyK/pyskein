@@ -1,95 +1,97 @@
+<!DOCTYPE html>
 
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" data-content_root="./">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Demo Scripts &mdash; PySkein 1.0 documentation</title>
-    
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="PySkein 1.0 documentation" href="index.html" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Demo Scripts &#8212; PySkein 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/default.css" />
+    <script src="_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Download PySkein" href="download.html" />
-    <link rel="prev" title="Skein Stream Cipher" href="stream.html" /> 
-  </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="download.html" title="Download PySkein"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="stream.html" title="Skein Stream Cipher"
-             accesskey="P">previous</a> |</li>
-        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+    <link rel="prev" title="Skein Stream Cipher" href="stream.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          
+
+          <div class="body" role="main">
             
-  <div class="section" id="demo-scripts">
-<h1>Demo Scripts<a class="headerlink" href="#demo-scripts" title="Permalink to this headline">¶</a></h1>
-<p>There are two Python scripts included in the distribution which demonstrate
-Skein hashing and Threefish encryption with PySkein.
-Please note that both scripts are written for demonstration
-of the functionality of PySkein only. I do not claim that they are
-secure or fit for any other purpose.</p>
-<div class="section" id="skeinsum">
-<h2>skeinsum<a class="headerlink" href="#skeinsum" title="Permalink to this headline">¶</a></h2>
-<p>This script does its best to mimic the behaviour of the well known tools
-<cite>md5sum</cite>, <cite>sha1sum</cite> or <cite>sha256sum</cite>.  It hashes all specified files with
-Skein-512-256 and prints the resulting hexdigest.</p>
-<div class="highlight-python"><pre>$ skeinsum COPYING
-63fb45390c188b7ba0e8eb2ed0e2fefa8416da515f0b28e670345ecd0de673dc  COPYING</pre>
+  <section id="demo-scripts">
+<h1>Demo Scripts<a class="headerlink" href="#demo-scripts" title="Link to this heading">¶</a></h1>
+<p>Three Python scripts are included in the distribution to demonstrate
+PySkein’s capabilities.  They are installed into the system <code class="docutils literal notranslate"><span class="pre">PATH</span></code> so
+you can run them directly from the command line.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These scripts are written to demonstrate PySkein functionality.
+They are not audited for production security use.</p>
 </div>
+<section id="skeinsum">
+<h2>skeinsum<a class="headerlink" href="#skeinsum" title="Link to this heading">¶</a></h2>
+<p>Computes Skein-512-256 digests of files, mimicking the behaviour of the
+Unix tools <code class="docutils literal notranslate"><span class="pre">md5sum</span></code>, <code class="docutils literal notranslate"><span class="pre">sha1sum</span></code>, and <code class="docutils literal notranslate"><span class="pre">sha256sum</span></code>.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ skeinsum [file ...]
+</pre></div>
 </div>
-<div class="section" id="threefish">
-<h2>threefish<a class="headerlink" href="#threefish" title="Permalink to this headline">¶</a></h2>
-<p>With this script you can try out file encryption and decryption with
-Threefish in a variant of tweak block chaining mode. This mode is designed
-for tweakable block ciphers, using an encrypted block as tweak value for the
-encryption of the next block.</p>
-<p>Since Threefish has a block size of 32, 64 or 128 bytes and a tweak size of
-16 bytes, tweak block chaining cannot be implemented without modification.
-The script runs Threefish with a block size of 32 bytes and uses the first
-16 bytes of an encrypted block as tweak value for the next encryption.
-A random initial tweak value is used (and saved together with the encrypted
-file).</p>
-<p>To encrypt the last block of the file, random bytes are appended to pad it
-to the block size of 32 bytes. The original length of the block is then
-encoded in the 5 least significant bits of the last byte of the block.</p>
-<p>Note that there is no obvious way to verify whether the key used for
-decryption is correct or not. Decryption will always succeed and produce
-garbage in the case of a wrong key. This is good enough for demonstration
-purposes (and may even be desired in some circumstances) and could trivially
-be changed by using checksums anyway.</p>
-<p>The 256 bit key value is derived by hashing the password entered at the command
-line with Skein-512-256.</p>
-<div class="highlight-python"><pre>$ threefish encrypt README
+<p>With no arguments, <code class="docutils literal notranslate"><span class="pre">skeinsum</span></code> reads from standard input:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ echo -n &quot;hello&quot; | skeinsum
+3a1b0a3e...  -
+</pre></div>
+</div>
+<p>With one or more file arguments, each file is hashed in turn:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ skeinsum COPYING LICENSE
+63fb45390c188b7ba0e8eb2ed0e2fefa8416da515f0b28e670345ecd0de673dc  COPYING
+...  LICENSE
+</pre></div>
+</div>
+<p>The format of each output line is <code class="docutils literal notranslate"><span class="pre">&lt;hexdigest&gt;</span>&#160; <span class="pre">&lt;filename&gt;</span></code>, compatible
+with the <code class="docutils literal notranslate"><span class="pre">--check</span></code> mode of the <code class="docutils literal notranslate"><span class="pre">sha*sum</span></code> tools (with an appropriate
+<code class="docutils literal notranslate"><span class="pre">-a</span></code> flag on BSD versions).</p>
+<p>The digest algorithm is <code class="docutils literal notranslate"><span class="pre">skein512(digest_bits=256)</span></code>: Skein-512 internal
+state with a 256-bit (32-byte) output, giving a 64-character hex string.</p>
+</section>
+<section id="threefish">
+<h2>threefish<a class="headerlink" href="#threefish" title="Link to this heading">¶</a></h2>
+<p>Encrypts and decrypts files using Threefish-256 in a variant of
+<strong>tweak block chaining</strong> (TBC) mode.  This mode is designed specifically
+for tweakable block ciphers: the first 16 bytes of each ciphertext block
+become the tweak for the next block, chaining blocks together in a way
+that is analogous to CBC but exploits the tweak input rather than XOR.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ threefish encrypt &lt;file&gt;   # produces &lt;file&gt;.3f
+$ threefish decrypt &lt;file&gt;.3f  # restores &lt;file&gt;
+</pre></div>
+</div>
+<p>The 256-bit encryption key is derived from a password entered at the
+prompt by computing <code class="docutils literal notranslate"><span class="pre">skein512(password,</span> <span class="pre">digest_bits=256)</span></code>.</p>
+<p>File format of the encrypted output:</p>
+<ul class="simple">
+<li><p><strong>16 bytes</strong> — random initial tweak, written at the start of the file.</p></li>
+<li><p><strong>Full blocks</strong> — each 32-byte block is encrypted, and its first 16
+bytes become the tweak for the next block.</p></li>
+<li><p><strong>Final block</strong> — padded to 32 bytes with random bytes; the 5 least
+significant bits of the last byte encode the number of original bytes in
+the final block (0–31), allowing exact recovery of the original length.</p></li>
+</ul>
+<p>Example session:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ threefish encrypt README
 Password:
 $ ls README*
 README  README.3f
@@ -97,72 +99,119 @@ $ mv README README.orig
 $ threefish decrypt README.3f
 Password:
 $ diff README README.orig
-$</pre>
+$
+</pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Decryption always succeeds without reporting whether the key is correct;
+a wrong key produces garbage output silently.  Add a checksum or
+authenticated encryption wrapper if integrity verification is needed.</p>
 </div>
+</section>
+<section id="skein-random">
+<h2>skein-random<a class="headerlink" href="#skein-random" title="Link to this heading">¶</a></h2>
+<p>Writes an unlimited stream of cryptographically seeded pseudo-random bytes
+to standard output.  It seeds <a class="reference internal" href="random.html#skein.RandomBytes" title="skein.RandomBytes"><code class="xref py py-class docutils literal notranslate"><span class="pre">skein.RandomBytes</span></code></a> from
+<code class="docutils literal notranslate"><span class="pre">/dev/random</span></code> and periodically mixes in additional entropy.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ skein-random          # silent; pipe to a consumer
+$ skein-random -v       # verbose: prints seeding progress to stderr
+</pre></div>
 </div>
+<p>The initial seeding reads exactly <code class="docutils literal notranslate"><span class="pre">state_size</span></code> bytes (64 bytes for the
+default Skein-512) from <code class="docutils literal notranslate"><span class="pre">/dev/random</span></code>, waiting until enough entropy is
+available.  After each 1 MiB chunk of output, <code class="docutils literal notranslate"><span class="pre">/dev/random</span></code> is polled
+again (non-blocking) and any available bytes are mixed into the state
+with <code class="xref py py-meth docutils literal notranslate"><span class="pre">seed()</span></code>, strengthening the output stream
+against state-compromise attacks.</p>
+<p>Example — generate a 256-byte random key and encode it as hex:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ skein-random | head -c 32 | xxd -p
+a3f6...
+</pre></div>
+</div>
+<p>Example — use as a source for <code class="docutils literal notranslate"><span class="pre">dd</span></code> (e.g. to benchmark):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ skein-random | dd of=/dev/null bs=1M count=100
+</pre></div>
+</div>
+</section>
+</section>
 
 
           </div>
+          
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Demo Scripts</a><ul>
-<li><a class="reference internal" href="#skeinsum">skeinsum</a></li>
-<li><a class="reference internal" href="#threefish">threefish</a></li>
+<h1 class="logo"><a href="index.html">PySkein</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="skein.html">Skein hash</a></li>
+<li class="toctree-l1"><a class="reference internal" href="threefish.html">Threefish block cipher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random.html">Pseudorandom Number Generator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stream.html">Skein Stream Cipher</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Demo Scripts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#skeinsum">skeinsum</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#threefish">threefish</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#skein-random">skein-random</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="download.html">Download PySkein</a></li>
 </ul>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="stream.html"
-                        title="previous chapter">Skein Stream Cipher</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="download.html"
-                        title="next chapter">Download PySkein</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/scripts.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="stream.html" title="previous chapter">Skein Stream Cipher</a></li>
+      <li>Next: <a href="download.html" title="next chapter">Download PySkein</a></li>
+  </ul></li>
+</ul>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="download.html" title="Download PySkein"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="stream.html" title="Skein Stream Cipher"
-             >previous</a> |</li>
-        <li><a href="index.html">PySkein 1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2008-2013 Hagen Fürstenau.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+      &#169;2008-2013 Hagen Fürstenau.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.0.4</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/scripts.rst.txt"
+          rel="nofollow">Page source</a>
     </div>
+
+    
+
+    
   </body>
 </html>

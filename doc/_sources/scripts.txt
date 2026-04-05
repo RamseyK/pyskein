@@ -1,59 +1,112 @@
 Demo Scripts
 ============
 
-There are two Python scripts included in the distribution which demonstrate
-Skein hashing and Threefish encryption with PySkein.
-Please note that both scripts are written for demonstration
-of the functionality of PySkein only. I do not claim that they are
-secure or fit for any other purpose.
+Three Python scripts are included in the distribution to demonstrate
+PySkein's capabilities.  They are installed into the system ``PATH`` so
+you can run them directly from the command line.
+
+.. note::
+   These scripts are written to demonstrate PySkein functionality.
+   They are not audited for production security use.
 
 
 skeinsum
 --------
 
-This script does its best to mimic the behaviour of the well known tools
-`md5sum`, `sha1sum` or `sha256sum`.  It hashes all specified files with
-Skein-512-256 and prints the resulting hexdigest. ::
+Computes Skein-512-256 digests of files, mimicking the behaviour of the
+Unix tools ``md5sum``, ``sha1sum``, and ``sha256sum``.
 
-    $ skeinsum COPYING
+Usage::
+
+    $ skeinsum [file ...]
+
+With no arguments, ``skeinsum`` reads from standard input::
+
+    $ echo -n "hello" | skeinsum
+    3a1b0a3e...  -
+
+With one or more file arguments, each file is hashed in turn::
+
+    $ skeinsum COPYING LICENSE
     63fb45390c188b7ba0e8eb2ed0e2fefa8416da515f0b28e670345ecd0de673dc  COPYING
+    ...  LICENSE
+
+The format of each output line is ``<hexdigest>  <filename>``, compatible
+with the ``--check`` mode of the ``sha*sum`` tools (with an appropriate
+``-a`` flag on BSD versions).
+
+The digest algorithm is ``skein512(digest_bits=256)``: Skein-512 internal
+state with a 256-bit (32-byte) output, giving a 64-character hex string.
 
 
 threefish
 ---------
 
-With this script you can try out file encryption and decryption with
-Threefish in a variant of tweak block chaining mode. This mode is designed
-for tweakable block ciphers, using an encrypted block as tweak value for the
-encryption of the next block.
+Encrypts and decrypts files using Threefish-256 in a variant of
+**tweak block chaining** (TBC) mode.  This mode is designed specifically
+for tweakable block ciphers: the first 16 bytes of each ciphertext block
+become the tweak for the next block, chaining blocks together in a way
+that is analogous to CBC but exploits the tweak input rather than XOR.
 
-Since Threefish has a block size of 32, 64 or 128 bytes and a tweak size of
-16 bytes, tweak block chaining cannot be implemented without modification.
-The script runs Threefish with a block size of 32 bytes and uses the first
-16 bytes of an encrypted block as tweak value for the next encryption.
-A random initial tweak value is used (and saved together with the encrypted
-file).
+Usage::
 
-To encrypt the last block of the file, random bytes are appended to pad it
-to the block size of 32 bytes. The original length of the block is then
-encoded in the 5 least significant bits of the last byte of the block.
+    $ threefish encrypt <file>   # produces <file>.3f
+    $ threefish decrypt <file>.3f  # restores <file>
 
-Note that there is no obvious way to verify whether the key used for
-decryption is correct or not. Decryption will always succeed and produce
-garbage in the case of a wrong key. This is good enough for demonstration
-purposes (and may even be desired in some circumstances) and could trivially
-be changed by using checksums anyway.
+The 256-bit encryption key is derived from a password entered at the
+prompt by computing ``skein512(password, digest_bits=256)``.
 
-The 256 bit key value is derived by hashing the password entered at the command
-line with Skein-512-256. ::
+File format of the encrypted output:
 
-        $ threefish encrypt README
-        Password:
-        $ ls README*
-        README  README.3f
-        $ mv README README.orig
-        $ threefish decrypt README.3f
-        Password:
-        $ diff README README.orig
-        $
+* **16 bytes** — random initial tweak, written at the start of the file.
+* **Full blocks** — each 32-byte block is encrypted, and its first 16
+  bytes become the tweak for the next block.
+* **Final block** — padded to 32 bytes with random bytes; the 5 least
+  significant bits of the last byte encode the number of original bytes in
+  the final block (0–31), allowing exact recovery of the original length.
 
+Example session::
+
+    $ threefish encrypt README
+    Password:
+    $ ls README*
+    README  README.3f
+    $ mv README README.orig
+    $ threefish decrypt README.3f
+    Password:
+    $ diff README README.orig
+    $
+
+.. note::
+   Decryption always succeeds without reporting whether the key is correct;
+   a wrong key produces garbage output silently.  Add a checksum or
+   authenticated encryption wrapper if integrity verification is needed.
+
+
+skein-random
+------------
+
+Writes an unlimited stream of cryptographically seeded pseudo-random bytes
+to standard output.  It seeds :class:`skein.RandomBytes` from
+``/dev/random`` and periodically mixes in additional entropy.
+
+Usage::
+
+    $ skein-random          # silent; pipe to a consumer
+    $ skein-random -v       # verbose: prints seeding progress to stderr
+
+The initial seeding reads exactly ``state_size`` bytes (64 bytes for the
+default Skein-512) from ``/dev/random``, waiting until enough entropy is
+available.  After each 1 MiB chunk of output, ``/dev/random`` is polled
+again (non-blocking) and any available bytes are mixed into the state
+with :meth:`~skein.RandomBytes.seed`, strengthening the output stream
+against state-compromise attacks.
+
+Example — generate a 256-byte random key and encode it as hex::
+
+    $ skein-random | head -c 32 | xxd -p
+    a3f6...
+
+Example — use as a source for ``dd`` (e.g. to benchmark)::
+
+    $ skein-random | dd of=/dev/null bs=1M count=100

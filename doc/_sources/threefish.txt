@@ -1,56 +1,77 @@
 Threefish block cipher
 ======================
 
+Threefish is the tweakable block cipher at the core of Skein.  Its design
+uses only 64-bit addition, left rotation, and XOR (the "ARX" construction),
+with no lookup tables or S-boxes, making it efficient and cache-timing-safe
+on modern 64-bit hardware.
+
+Threefish has three variants, named after their block (and key) size:
+
+===============  ==========  ========
+Variant          Block size  Rounds
+===============  ==========  ========
+Threefish-256    32 bytes    72
+Threefish-512    64 bytes    72
+Threefish-1024   128 bytes   80
+===============  ==========  ========
+
+The **tweak** is a 16-byte value that parameterises the cipher without
+changing the key.  Encrypting the same plaintext with the same key but
+different tweaks produces completely independent ciphertexts.  Skein uses
+the tweak internally to carry a byte-position counter and type flags;
+the standalone Threefish object exposes the tweak so you can implement
+custom modes of operation.
+
 .. function:: skein.threefish(key, tweak)
 
-    This constructor function returns a cipher object for encryption and
-    decryption with the given key and tweak values.
-    The key must be a bytes object of length 32, 64, or 128,
-    while the tweak must always consist of 16 bytes.
+    Return a new Threefish cipher object.
+
+    ``key`` must be a bytes object of length 32, 64, or 128, selecting
+    Threefish-256, -512, or -1024 respectively.
+
+    ``tweak`` must be exactly 16 bytes.  It is incorporated into every
+    encryption and decryption operation, so changing the tweak produces an
+    entirely different mapping from plaintext to ciphertext.
 
 
 Threefish objects
 -----------------
 
-Threefish cipher objects have two methods:
-
 .. method:: threefish.encrypt_block(data)
 
-    Encrypt the given block of (bytes) data.
-    (String data has to be encoded to bytes first.)
-    The block has to have the same length as the key,
-    i.e. 32, 64, or 128 bytes.
+    Encrypt a single block and return the ciphertext as a bytes object.
+
+    ``data`` must be a bytes object of the same length as the key
+    (32, 64, or 128 bytes).
 
 .. method:: threefish.decrypt_block(data)
 
-    Decrypt the given block of (bytes) data.
-    The block has to have the same length as the key,
-    i.e. 32, 64, or 128 bytes.
+    Decrypt a single block and return the plaintext as a bytes object.
 
-
-In addition they have the following attributes:
+    ``data`` must be a bytes object of the same length as the key.
 
 .. attribute:: threefish.tweak
 
-    The tweak value given to the constructor function.
-    This attribute is writable, allowing the tweak to be changed without
-    creation of a new cipher object.
+    The current 16-byte tweak value.  This attribute is readable and
+    writable.  Updating the tweak in place (rather than creating a new
+    cipher object) is efficient and allows stateful modes such as cipher
+    block chaining (CBC) to update the tweak after each block without
+    re-deriving the full key schedule.
 
 .. attribute:: threefish.block_bits
 
-    Threefish block size (as determined by the key length) in bits, i.e.
-    ``256``, ``512``, or ``1024``
+    Block size in bits: ``256``, ``512``, or ``1024``.
 
 .. attribute:: threefish.block_size
 
-    Threefish block size in bytes (same as the key length), i.e.
-    ``32``, ``64``, or ``128``
+    Block size in bytes: ``32``, ``64``, or ``128``.
 
 
 Examples
 --------
 
-Encryption and decryption of a block of 32 bytes::
+Basic encryption and decryption::
 
     >>> from skein import threefish
     >>> t = threefish(b'key of 32,64 or 128 bytes length', b'tweak: 16 bytes ')
@@ -62,13 +83,25 @@ Encryption and decryption of a block of 32 bytes::
     >>> t.decrypt_block(c)
     b'block of data,same length as key'
 
-
-Changing the tweak leads to a different cipher text::
+Changing the tweak produces an independent ciphertext from the same key and
+plaintext — demonstrating tweakable-cipher domain separation::
 
     >>> t.tweak = b'some other tweak'
-    >>> c = t.encrypt_block(b'block of data,same length as key')
-    >>> c
-    b'3gE(9X|_\xab\x87\xe5\xc7\xcc\xa6m\xc4e\x06\xcb\xdbBg\xf2\xe6A\xb9\x86o\xecW\xe6\xfd'
-    >>> t.decrypt_block(c)
+    >>> c2 = t.encrypt_block(b'block of data,same length as key')
+    >>> c2
+    b'\xae\xc5\x8b\tX\x9c\x82\xfb\xa5m\x96\x87k|\x9fj\x136&P\xdb\x8af\x103t\x17]\xe5N\x01\xae'
+    >>> t.decrypt_block(c2)
     b'block of data,same length as key'
 
+Tweak block chaining (TBC) — a mode designed for tweakable ciphers where
+the first 16 bytes of each ciphertext block become the tweak for the next.
+This avoids the all-or-nothing feedback of CBC while still chaining blocks::
+
+    >>> key = b'k' * 32
+    >>> t = threefish(key, b'\x00' * 16)   # random initial tweak in practice
+    >>> pt1 = b'first block: 32 bytes of data!!!'
+    >>> pt2 = b'second block:32 bytes of data!!!'
+    >>> block1 = t.encrypt_block(pt1)
+    >>> t.tweak = block1[:16]              # chain: first half of ciphertext → next tweak
+    >>> block2 = t.encrypt_block(pt2)
+    >>> ciphertext = block1 + block2
