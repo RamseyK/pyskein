@@ -22,8 +22,10 @@ extra_compile_args = [
 ]
 
 # Memory accesses *must* be aligned for arm64
-if platform.machine() in ("arm64", "aarch64"):
-    extra_compile_args.append("-mstrict-align")
+# if platform.machine() in ("arm64", "aarch64"):
+#     extra_compile_args.append("-mstrict-align")
+#     extra_compile_args.append("-mstackrealign")
+#     extra_compile_args.append("-fpack-struct=16")
 
 ext = Extension("_skein",
                 sources=["skein/threefish.c", "skein/_skeinmodule.c"],

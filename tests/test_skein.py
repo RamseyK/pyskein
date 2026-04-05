@@ -253,84 +253,84 @@ class TestSkein1024Tree(TestSkeinBase, unittest.TestCase):
         pass
 
 
-# class TestSkeinKAT(unittest.TestCase):
-#     RE_HEADER = re.compile(r":Skein-(\d+):\s+(\d+)-bit hash, "+
-#                            r"msgLen =\s+(\d+) bits(.+)")
-#     RE_TREE = re.compile(r"Tree: leaf=(..), node=(..), maxLevels=(..)")
-#     HASHERS = {256:skein.skein256, 512:skein.skein512, 1024:skein.skein1024}
+class TestSkeinKAT(unittest.TestCase):
+    RE_HEADER = re.compile(r":Skein-(\d+):\s+(\d+)-bit hash, "+
+                           r"msgLen =\s+(\d+) bits(.+)")
+    RE_TREE = re.compile(r"Tree: leaf=(..), node=(..), maxLevels=(..)")
+    HASHERS = {256:skein.skein256, 512:skein.skein512, 1024:skein.skein1024}
 
-#     def testKATFile(self):
+    def testKATFile(self):
 
-#         # Test test cases fail - investigate
-#         skip_test_names = [
-#             "Skein-256:   256-bit hash, msgLen =  2024",
-#             "Skein-256:   256-bit hash, msgLen =  4064",
-#             "Skein-256:   256-bit hash, msgLen =   976",
-#             "Skein-256:   256-bit hash, msgLen =  1992",
-#             "Skein-256:   256-bit hash, msgLen =  1976",
-#             "Skein-256:   256-bit hash, msgLen =  2992",
-#             "Skein-512:   512-bit hash, msgLen =  4064",
-#             "Skein-512:   512-bit hash, msgLen =  8152",
-#             "Skein-512:   512-bit hash, msgLen =  1992",
-#             "Skein-512:   512-bit hash, msgLen =  4032",
-#             "Skein-512:   512-bit hash, msgLen =  4016",
-#             "Skein-512:   512-bit hash, msgLen =  6056",
-#             "Skein-512:   512-bit hash, msgLen =  8096",
-#             "Skein-256:   256-bit hash, msgLen =  4008",
-#             "Skein-1024: 1024-bit hash, msgLen =  8160",
-#             "Skein-1024: 1024-bit hash, msgLen = 16344",
-#             "Skein-1024: 1024-bit hash, msgLen =  4040",
-#             "Skein-1024: 1024-bit hash, msgLen =  8128",
-#             "Skein-1024: 1024-bit hash, msgLen =  8112"
-#         ]
-#         with open(KATFILE, "r") as f:
-#             kattxt = f.read()
-#         n = k = 0
-#         for block in kattxt.split("---------\n"):
-#             if not block.strip():
-#                 continue
-#             n += 1
+        # Test test cases fail - investigate
+        # skip_test_names = [
+        #     "Skein-256:   256-bit hash, msgLen =  4064",
+        #     "Skein-256:   256-bit hash, msgLen =   976",
+        #     "Skein-256:   256-bit hash, msgLen =  1992",
+        #     "Skein-256:   256-bit hash, msgLen =  1976",
+        #     "Skein-256:   256-bit hash, msgLen =  2992",
+        #     "Skein-512:   512-bit hash, msgLen =  4064",
+        #     "Skein-512:   512-bit hash, msgLen =  8152",
+        #     "Skein-512:   512-bit hash, msgLen =  1992",
+        #     "Skein-512:   512-bit hash, msgLen =  4032",
+        #     "Skein-512:   512-bit hash, msgLen =  4016",
+        #     "Skein-512:   512-bit hash, msgLen =  6056",
+        #     "Skein-512:   512-bit hash, msgLen =  8096",
+        #     "Skein-256:   256-bit hash, msgLen =  4008",
+        #     "Skein-1024: 1024-bit hash, msgLen =  8160",
+        #     "Skein-1024: 1024-bit hash, msgLen = 16344",
+        #     "Skein-1024: 1024-bit hash, msgLen =  4040",
+        #     "Skein-1024: 1024-bit hash, msgLen =  8128",
+        #     "Skein-1024: 1024-bit hash, msgLen =  8112",
+        #     "Skein-1024: 1024-bit hash, msgLen = 16288 bits"
+        # ]
+        with open(KATFILE, "r") as f:
+            kattxt = f.read()
+        n = k = 0
+        for block in kattxt.split("---------\n"):
+            if not block.strip():
+                continue
+            n += 1
 
-#             # parse header line
-#             m = self.RE_HEADER.search(block)
-#             test_case_name = str(m.group())
+            # parse header line
+            m = self.RE_HEADER.search(block)
+            test_case_name = str(m.group())
 
-#             state_bits, digest_bits, msg_bits = map(int, m.groups()[:-1])
-#             rest = m.groups()[-1]
-#             if "Tree" in rest:
-#                 tree_params = tuple(int(x, 16) for x in
-#                                     self.RE_TREE.search(rest).groups())
-#             else:
-#                 tree_params = None
+            state_bits, digest_bits, msg_bits = map(int, m.groups()[:-1])
+            rest = m.groups()[-1]
+            if "Tree" in rest:
+                tree_params = tuple(int(x, 16) for x in
+                                    self.RE_TREE.search(rest).groups())
+            else:
+                tree_params = None
 
-#             skip = False
-#             for skip_test_name in skip_test_names:
-#                 if skip_test_name in test_case_name:
-#                     skip = True
-#             if skip or ((msg_bits % 16) != 0):
-#                 print(f"SKIPPING: {test_case_name}")
-#                 continue
-#             print(test_case_name)
+            skip = False
+            for skip_test_name in skip_test_names:
+                if skip_test_name in test_case_name:
+                    skip = True
+            # if skip or ((msg_bits % 16) != 0):
+            #     print(f"SKIPPING: {test_case_name}")
+            #     continue
+            print(test_case_name)
 
-#             # extract message text and MAC key
-#             block = block.split("Message data:\n", 1)[1]
-#             if "MAC key =" in block:
-#                 msgtxt, block = block.split("MAC key =", 1)
-#                 check, block = block.split("\n", 1)
-#                 check = int(check.split()[0])
-#                 mactxt, hashtxt = block.split("Result:\n")
-#             else:
-#                 msgtxt, hashtxt = block.split("Result:\n")
-#                 mactxt = ""
+            # extract message text and MAC key
+            block = block.split("Message data:\n", 1)[1]
+            if "MAC key =" in block:
+                msgtxt, block = block.split("MAC key =", 1)
+                check, block = block.split("\n", 1)
+                check = int(check.split()[0])
+                mactxt, hashtxt = block.split("Result:\n")
+            else:
+                msgtxt, hashtxt = block.split("Result:\n")
+                mactxt = ""
 
-#             # hash data and compare result
-#             hasher = self.HASHERS[state_bits](digest_bits=digest_bits,
-#                                               key=by(mactxt), tree=tree_params)
-#             hasher.update(by(msgtxt), bits=msg_bits)
-#             self.assertEqual(hasher.digest(), by(hashtxt))
-#             k += 1
-#         print("\n{0}/{1} known answer tests succeeded ({2} skipped)".format(
-#               k, n, n-k))
+            # hash data and compare result
+            hasher = self.HASHERS[state_bits](digest_bits=digest_bits,
+                                              key=by(mactxt), tree=tree_params)
+            hasher.update(by(msgtxt), bits=msg_bits)
+            self.assertEqual(hasher.digest(), by(hashtxt))
+            k += 1
+        print("\n{0}/{1} known answer tests succeeded ({2} skipped)".format(
+              k, n, n-k))
 
 
 def by(txt):

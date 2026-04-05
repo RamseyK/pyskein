@@ -33,8 +33,10 @@ new_skein_object(void)
 
     /* Set next_tree_level right away, so that we have a valid pointer in
        skein_dealloc in any case. */
-    if ((new_obj=PyObject_New(skeinObject, &skeinType)) != NULL)
+    if ((new_obj=PyObject_New(skeinObject, &skeinType)) != NULL) {
+        new_obj->state.block_processor = NULL;
         new_obj->state.next_tree_level = NULL;
+    }
     return new_obj;
 }
 
@@ -296,7 +298,7 @@ tree_block_processor(skein_state_t *state,
     u08b_t remaining_levels = state->remaining_tree_levels;
     struct args_t *args = NULL;
 
-    if (!remaining_levels) {  /* we do not have to care about nodes */
+    if (remaining_levels == 0) {  /* we do not have to care about nodes */
         basic_processor(state, data, count, stateBytes);
     } else if (count < n) {  /* data fits into this node */
         basic_processor(state, data, count, stateBytes);
@@ -337,7 +339,7 @@ tree_block_processor(skein_state_t *state,
             if (next_level == last_level) {
                 /* The new state is inserted before the last one, so that
                    last_level pointers stay valid. */
-                state->next_tree_level = PyMem_Malloc(sizeof(skein_state_t));
+                state->next_tree_level = PyMem_Calloc(1, sizeof(skein_state_t));
                 if (state->next_tree_level == NULL) {
                     PyErr_SetNone(PyExc_MemoryError);
                     return 0;
