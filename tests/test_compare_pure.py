@@ -21,7 +21,7 @@ class TestThreefish(unittest.TestCase):
 class TestSkein(unittest.TestCase):
 
     def test_sequential(self):
-        for _ in range(7):
+        for n in range(7):
             for kws in combinations(["init", "key", "pers", "public_key", "key_id", "nonce"], n):
                 kwdict = {
                     kw: b"foo" + bytes([i])

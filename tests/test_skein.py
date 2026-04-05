@@ -20,7 +20,7 @@ class TestSkeinModule(unittest.TestCase):
                      is type(skein.skein1024()))
 
 
-class TestSkeinBase:
+class SkeinTestMixin:
 
     @classmethod
     def HASHER(cls, *args, **kwargs):
@@ -220,22 +220,22 @@ class TestSkeinBase:
         self.assertEqual(c.decrypt(x), b'hello world')
 
 
-class TestSkein256(TestSkeinBase, unittest.TestCase):
+class TestSkein256(SkeinTestMixin, unittest.TestCase):
     _HASHER = skein.skein256
     STATE_BITS = 256
 
 
-class TestSkein512(TestSkeinBase, unittest.TestCase):
+class TestSkein512(SkeinTestMixin, unittest.TestCase):
     _HASHER = skein.skein512
     STATE_BITS = 512
 
 
-class TestSkein1024(TestSkeinBase, unittest.TestCase):
+class TestSkein1024(SkeinTestMixin, unittest.TestCase):
     _HASHER = skein.skein1024
     STATE_BITS = 1024
 
 
-class TestSkein1024Tree(TestSkeinBase, unittest.TestCase):
+class TestSkein1024Tree(SkeinTestMixin, unittest.TestCase):
     STATE_BITS = 1024
 
     def test_tree_parameters(self):
@@ -261,28 +261,6 @@ class TestSkeinKAT(unittest.TestCase):
 
     def testKATFile(self):
 
-        # Test test cases fail - investigate
-        # skip_test_names = [
-        #     "Skein-256:   256-bit hash, msgLen =  4064",
-        #     "Skein-256:   256-bit hash, msgLen =   976",
-        #     "Skein-256:   256-bit hash, msgLen =  1992",
-        #     "Skein-256:   256-bit hash, msgLen =  1976",
-        #     "Skein-256:   256-bit hash, msgLen =  2992",
-        #     "Skein-512:   512-bit hash, msgLen =  4064",
-        #     "Skein-512:   512-bit hash, msgLen =  8152",
-        #     "Skein-512:   512-bit hash, msgLen =  1992",
-        #     "Skein-512:   512-bit hash, msgLen =  4032",
-        #     "Skein-512:   512-bit hash, msgLen =  4016",
-        #     "Skein-512:   512-bit hash, msgLen =  6056",
-        #     "Skein-512:   512-bit hash, msgLen =  8096",
-        #     "Skein-256:   256-bit hash, msgLen =  4008",
-        #     "Skein-1024: 1024-bit hash, msgLen =  8160",
-        #     "Skein-1024: 1024-bit hash, msgLen = 16344",
-        #     "Skein-1024: 1024-bit hash, msgLen =  4040",
-        #     "Skein-1024: 1024-bit hash, msgLen =  8128",
-        #     "Skein-1024: 1024-bit hash, msgLen =  8112",
-        #     "Skein-1024: 1024-bit hash, msgLen = 16288 bits"
-        # ]
         with open(KATFILE, "r") as f:
             kattxt = f.read()
         n = k = 0
@@ -303,13 +281,6 @@ class TestSkeinKAT(unittest.TestCase):
             else:
                 tree_params = None
 
-            skip = False
-            for skip_test_name in skip_test_names:
-                if skip_test_name in test_case_name:
-                    skip = True
-            # if skip or ((msg_bits % 16) != 0):
-            #     print(f"SKIPPING: {test_case_name}")
-            #     continue
             print(test_case_name)
 
             # extract message text and MAC key
@@ -341,7 +312,7 @@ def by(txt):
     return bytes(int(x, 16) for x in txt.split())
 
 
-class TestThreefishBase:
+class ThreefishTestMixin:
 
     def setUp(self):
         self.t = skein.threefish(bytes(range(self.KEYLEN)), bytes(range(16)))
@@ -383,15 +354,15 @@ class TestThreefishBase:
         print(f"\n{n} random Threefish-{self.KEYLEN*8} roundtrip tests succeeded.")
 
 
-class TestThreefish32(TestThreefishBase, unittest.TestCase):
+class TestThreefish32(ThreefishTestMixin, unittest.TestCase):
     KEYLEN = 32
 
 
-class TestThreefish64(TestThreefishBase, unittest.TestCase):
+class TestThreefish64(ThreefishTestMixin, unittest.TestCase):
     KEYLEN = 64
 
 
-class TestThreefish128(TestThreefishBase, unittest.TestCase):
+class TestThreefish128(ThreefishTestMixin, unittest.TestCase):
     KEYLEN = 128
 
 

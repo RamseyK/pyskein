@@ -226,6 +226,8 @@ int
 hash_bytes(skeinObject *sk, const u08b_t *msg, size_t msgByteCnt)
 {
     size_t n = 0;
+    size_t origByteCnt = msgByteCnt;  /* save before we decrement it */
+    int ok = 1;
 
     if (msgByteCnt >= (~(u64b_t)0) - sk->hashed_bytes) {
         PyErr_SetString(PyExc_OverflowError,
@@ -233,7 +235,12 @@ hash_bytes(skeinObject *sk, const u08b_t *msg, size_t msgByteCnt)
         return 0;
     }
 
-    Py_BEGIN_ALLOW_THREADS
+    /* Only release the GIL for sequential hashing (pure-C block processors).
+       Tree hashing uses Python memory APIs and must hold the GIL. */
+    PyThreadState *_save = NULL;
+    if (sk->state.next_tree_level == NULL)
+        _save = PyEval_SaveThread();
+
     if (msgByteCnt + sk->bCnt > sk->stateBytes) { /* any full block? */
         /* fill buffer and process one block */
         if (sk->bCnt) {
@@ -244,15 +251,19 @@ hash_bytes(skeinObject *sk, const u08b_t *msg, size_t msgByteCnt)
                 msg += n;
                 sk->bCnt += n;
             }
-            if (!sk->state.block_processor(&sk->state,sk->b, 1,sk->stateBytes))
-                return 0;
+            if (!sk->state.block_processor(&sk->state,sk->b, 1,sk->stateBytes)) {
+                ok = 0;
+                goto done;
+            }
             sk->bCnt = 0;
         }
         /* process any remaining full blocks */
         if (msgByteCnt > sk->stateBytes) {
             n = (msgByteCnt-1) / sk->stateBytes;
-            if (!sk->state.block_processor(&sk->state, msg, n, sk->stateBytes))
-                return 0;
+            if (!sk->state.block_processor(&sk->state, msg, n, sk->stateBytes)) {
+                ok = 0;
+                goto done;
+            }
             msgByteCnt -= n * sk->stateBytes;
             msg += n * sk->stateBytes;
         }
@@ -262,9 +273,11 @@ hash_bytes(skeinObject *sk, const u08b_t *msg, size_t msgByteCnt)
         memcpy(&sk->b[sk->bCnt], msg, msgByteCnt);
         sk->bCnt += msgByteCnt;
     }
-    sk->hashed_bytes += msgByteCnt;
-    Py_END_ALLOW_THREADS
-    return 1;
+    sk->hashed_bytes += origByteCnt;  /* count all bytes fed, not just buffered tail */
+done:
+    if (_save != NULL)
+        PyEval_RestoreThread(_save);
+    return ok;
 }
 
 struct args_t {
@@ -514,7 +527,7 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
     /* set low bits to 0 if last byte is incomplete */
     if (8*stop > sk->digestBits) {
         n = 8*stop - sk->digestBits;       /* number of bits to clear */
-        hashVal[offset-1] &= ~((1<<n)-1);
+        hashVal[offset-1] &= ~((1U<<n)-1);
     }
 
     /* restore X, b and (for tree hashing) block_processor */
@@ -691,7 +704,8 @@ skein_getstate(skeinObject *sk)
             break;
 
         len+=3;
-        _PyTuple_Resize(&t, len);
+        if (_PyTuple_Resize(&t, len) == -1)
+            return NULL;
     }
 
     return t;
@@ -844,9 +858,13 @@ skein___reduce__(skeinObject *self, [[maybe_unused]] PyObject *args)
     PyObject *t = skein_getstate(self);
     PyObject *res = NULL;
 
+    if (t == NULL)
+        return NULL;
     res = PyTuple_Pack(1, t);
     Py_DECREF(t);
     t = res;
+    if (t == NULL)
+        return NULL;
     res = PyTuple_Pack(2, from_state_func, t);
     Py_DECREF(t);
     return res;
@@ -1013,10 +1031,15 @@ skein_copy(skeinObject *self, [[maybe_unused]] PyObject *nothing)
     if (new_obj == NULL)
         return NULL;
     t = skein_getstate(self);
+    if (t == NULL) {
+        Py_DECREF(new_obj);
+        return NULL;
+    }
     res = skein_setstate(new_obj, t);
     Py_DECREF(t);
     if (res)
         return (PyObject *)new_obj;
+    Py_DECREF(new_obj);
     PyErr_SetString(PyExc_RuntimeError, "internal error");
     return NULL;
 }
