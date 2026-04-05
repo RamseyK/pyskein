@@ -245,11 +245,8 @@ class TestSkein1024Tree(SkeinTestMixin, unittest.TestCase):
     def HASHER(cls, *args, **kwargs):
         return skein.skein1024(*args, tree=(1, 2, 3), **kwargs)
 
-    # These test's fail - investigate
+    # test_copy fails and is overridden so it does not run. Investigate.
     def test_copy(self):
-        pass
-
-    def test_pickle(self):
         pass
 
 

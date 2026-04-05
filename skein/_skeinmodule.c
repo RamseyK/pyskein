@@ -834,12 +834,10 @@ skein_setstate(skeinObject *sk, PyObject *t)
         /* stock values */
         state->block_processor = basic_processor;
         state->tree_blocks = tree_blocks;
-
-        // Decrementing below zero will underflow and we're done.
-        if (remaining_levels == 0)
-            return 0;
-
-        state->remaining_tree_levels = --remaining_levels;
+        /* remaining_levels == 0 is valid: it is the terminal "end" template
+           entry that init_tree always appends after the active levels.
+           Assign first, then decrement so the template gets value 0. */
+        state->remaining_tree_levels = remaining_levels;
 
         /* values from tuple */
         buf = PyTuple_GET_ITEM(t, i++);
@@ -862,6 +860,11 @@ skein_setstate(skeinObject *sk, PyObject *t)
             break;
         if (len-i < 3)
             return 0;
+        /* The template entry (remaining_levels == 0) must be the last one.
+           Any additional entries would exceed tree_max. */
+        if (remaining_levels == 0)
+            return 0;
+        remaining_levels--;
     }
     return 1;
 }
