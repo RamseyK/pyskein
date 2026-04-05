@@ -1,20 +1,9 @@
 Download PySkein
 ================
 
-PySkein runs with Python 3.1 or higher. It was mainly tested on 64-bit Linux,
-but should run on various platforms supported by Python. Due to the design of
+PySkein runs with Python 3.11 or higher. It was tested on 64-bit Linux x86-64, macOS arm64, and Windows x86-64, 
+but should run on other platforms supported by Python. Due to the design of
 the Skein algorithm, performance is significantly lower on 32-bit systems.
-
-Download the most recent version 1.0:
-
-    * **Source code:** `pyskein-1.0.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-1.0.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-1.0.tar.gz.asc>`__)
-
-    * **Windows installer (for Python 3.3):** `pyskein-1.0.win32-py3.3.msi <http://pypi.python.org/packages/3.3/p/pyskein/pyskein-1.0.win32-py3.3.msi>`_ (`sig <http://pypi.python.org/packages/3.3/p/pyskein/pyskein-1.0.win32-py3.3.msi.asc>`__)
-
-Note: If you have a version of PySkein <0.5 installed, please make sure to
-manually delete "skein.*" from your Python `site-packages` directory before
-installing a more recent version.
-
 
 Skein versions
 --------------
@@ -39,6 +28,15 @@ any release of PySkein.
 
 Changes between version
 -----------------------
+
+2.0
+    - Fixed numerous bugs, memory safety issues, and undefined behavior
+
+    - Added support for Python free-threading
+
+    - Updated to use modern packaging standards (pyproject.toml)
+
+    - Dropped support for Python versions lower than 3.11
 
 1.0
     - Removed deprecated alias 'mac' for parameter 'key'
@@ -160,30 +158,4 @@ Changes between version
 Previous versions
 -----------------
 
-* `pyskein-0.7.1.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.1.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.1.tar.gz.asc>`__)
-
-* `pyskein-0.7.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.7.tar.gz.asc>`__)
-
-* `pyskein-0.6.3.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.3.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.3.tar.gz.asc>`__)
-
-* `pyskein-0.6.2.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.2.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.2.tar.gz.asc>`__)
-
-* `pyskein-0.6.1.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.1.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.1.tar.gz.asc>`__)
-
-* `pyskein-0.6.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.6.tar.gz.asc>`__)
-
-* `pyskein-0.5.2.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.2.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.2.tar.gz.asc>`__)
-
-* `pyskein-0.5.1.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.1.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.1.tar.gz.asc>`__)
-
-* `pyskein-0.5.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.5.tar.gz.asc>`__)
-
-* `pyskein-0.4.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.4.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.4.tar.gz.asc>`__)
-
-* `pyskein-0.3.1.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.1.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.1.tar.gz.asc>`__)
-
-* `pyskein-0.3.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.3.tar.gz.asc>`__)
-
-* `pyskein-0.2.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.2.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.2.tar.gz.asc>`__)
-
-* `pyskein-0.1.tar.gz <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.1.tar.gz>`_ (`sig <http://pypi.python.org/packages/source/p/pyskein/pyskein-0.1.tar.gz.asc>`__)
+Versions including and prior to 1.0 are available on PyPI
