@@ -21,7 +21,6 @@
 ### Skein-PRNG ###
 ###
 import random
-from typing import Union
 
 from _skein import skein256, skein512, skein1024, threefish  # noqa
 
@@ -149,7 +148,7 @@ class StreamCipher:
         self._pos = newpos
         return stream
 
-    def encrypt(self, plain: Union[str, bytes]):
+    def encrypt(self, plain: str | bytes):
         """Encrypt bytes object 'plain' with keystream"""
         stream = self.keystream(len(plain))
         try:
