@@ -36,6 +36,9 @@ new_skein_object(void)
     if ((new_obj=PyObject_New(skeinObject, &skeinType)) != NULL) {
         new_obj->state.block_processor = NULL;
         new_obj->state.next_tree_level = NULL;
+#ifdef Py_GIL_DISABLED
+        new_obj->lock = (PyMutex){0};
+#endif
     }
     return new_obj;
 }
@@ -107,20 +110,29 @@ skein_get_digest_bits(const skeinObject *self, [[maybe_unused]] void *closure)
 }
 
 static PyObject *
-skein_get_hashed_bits(const skeinObject *self, [[maybe_unused]] void *closure)
+skein_get_hashed_bits(skeinObject *self, [[maybe_unused]] void *closure)
 {
     PyObject *eight = NULL;
     PyObject *bytes = NULL;
     PyObject *product = NULL;
     PyObject *bits = NULL;
     PyObject *res = NULL;
+    u64b_t hashed_bytes;
+    u08b_t missing_bits;
+
+    /* Snapshot mutable fields under the lock; all Python API calls happen
+       outside it to avoid holding the lock during memory allocation. */
+    SKEIN_LOCK(self);
+    hashed_bytes = self->hashed_bytes;
+    missing_bits = self->missing_bits;
+    SKEIN_UNLOCK(self);
 
     if ((eight=PyLong_FromLong(8)) == NULL)
         return NULL;
 
-    if ((bytes=PyLong_FromUnsignedLongLong(self->hashed_bytes)) == NULL)
+    if ((bytes=PyLong_FromUnsignedLongLong(hashed_bytes)) == NULL)
         goto error;
-    if ((bits=PyLong_FromLong(self->missing_bits)) == NULL)
+    if ((bits=PyLong_FromLong(missing_bits)) == NULL)
         goto error;
 
     product = PyNumber_Multiply(bytes, eight);
@@ -169,7 +181,7 @@ threefish_get_block_bits(const threefishObject *self, [[maybe_unused]] void *clo
 }
 
 static PyObject *
-threefish_get_tweak(const threefishObject *self, [[maybe_unused]] void *closure)
+threefish_get_tweak(threefishObject *self, [[maybe_unused]] void *closure)
 {
     PyObject *rv = NULL;
     char *buf = NULL;
@@ -183,12 +195,14 @@ threefish_get_tweak(const threefishObject *self, [[maybe_unused]] void *closure)
         return NULL;
     }
 
+    SKEIN_LOCK(self);
     WORDS_TO_BYTES((u08b_t *)buf, self->kw, 16);
+    SKEIN_UNLOCK(self);
     return rv;
 }
 
 static int
-threefish_set_tweak(const threefishObject *self, PyObject *value, [[maybe_unused]] void *closure)
+threefish_set_tweak(threefishObject *self, PyObject *value, [[maybe_unused]] void *closure)
 {
     char *buf = NULL;
     Py_ssize_t len = 0;
@@ -203,7 +217,10 @@ threefish_set_tweak(const threefishObject *self, PyObject *value, [[maybe_unused
         PyErr_SetString(PyExc_ValueError, "tweak value must have 16 bytes");
         goto error;
     }
+    SKEIN_LOCK(self);
     BYTES_TO_WORDS(self->kw, (u08b_t *)buf, 2);
+    self->kw[2] = self->kw[0] ^ self->kw[1];  /* update extended-tweak parity (T2 = T0^T1) */
+    SKEIN_UNLOCK(self);
     Py_CLEAR(h);
     return 0;
 error:
@@ -850,24 +867,40 @@ skein_setstate(skeinObject *sk, PyObject *t)
 }
 
 
-PyObject *from_state_func;
-
 static PyObject *
 skein___reduce__(skeinObject *self, [[maybe_unused]] PyObject *args)
 {
-    PyObject *t = skein_getstate(self);
+    PyObject *m = PyImport_ImportModule("_skein");
+    PyObject *from_state_func = NULL;
+    PyObject *t = NULL;
     PyObject *res = NULL;
 
-    if (t == NULL)
+    if (m == NULL)
         return NULL;
+    from_state_func = PyObject_GetAttrString(m, "_from_state");
+    Py_DECREF(m);
+    if (from_state_func == NULL)
+        return NULL;
+
+    SKEIN_LOCK(self);
+    t = skein_getstate(self);
+    SKEIN_UNLOCK(self);
+
+    if (t == NULL)
+        goto error;
     res = PyTuple_Pack(1, t);
     Py_DECREF(t);
     t = res;
     if (t == NULL)
-        return NULL;
+        goto error;
     res = PyTuple_Pack(2, from_state_func, t);
     Py_DECREF(t);
+    Py_DECREF(from_state_func);
     return res;
+
+error:
+    Py_DECREF(from_state_func);
+    return NULL;
 }
 
 
@@ -917,15 +950,16 @@ skein_update(skeinObject *self, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    SKEIN_LOCK(self);
     if (!self->missing_bits) {  /* well aligned */
         /* hash whole bytes */
         if (!hash_bytes(self, buf.buf, bytes))
-            return NULL;
+            goto update_error;
 
         /* hash remaining bits */
         if (bits) {
             if (!hash_bytes(self, (u08b_t *)buf.buf + bytes, 1))
-                return NULL;
+                goto update_error;
             self->b[self->bCnt-1] = (self->b[self->bCnt-1]
                                      & (((1<<bits)-1) << (8-bits)))
                                      | (1<<(7-bits));
@@ -937,7 +971,7 @@ skein_update(skeinObject *self, PyObject *args, PyObject *kw)
             PyErr_Format(PyExc_ValueError,
                          "<=%d bits required for byte alignment",
                          self->missing_bits);
-            return NULL;
+            goto update_error;
         }
         self->b[self->bCnt-1] = (self->b[self->bCnt-1]
              & (~(1<<(self->missing_bits-1))))
@@ -946,10 +980,16 @@ skein_update(skeinObject *self, PyObject *args, PyObject *kw)
         if (self->missing_bits)
             self->b[self->bCnt-1] |= 1<<(self->missing_bits-1);
     }
+    SKEIN_UNLOCK(self);
 
 finished:
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
+
+update_error:
+    SKEIN_UNLOCK(self);
+    PyBuffer_Release(&buf);
+    return NULL;
 }
 
 PyDoc_STRVAR(skein_digest__doc__,
@@ -980,8 +1020,11 @@ skein_digest(skeinObject *self, PyObject *args)
     rv = PyBytes_FromStringAndSize(NULL, stop-start);
     if (rv == NULL)
         return NULL;
-    if (start < stop)
+    if (start < stop) {
+        SKEIN_LOCK(self);
         output_hash(self, (u08b_t *)PyBytes_AS_STRING(rv), start, stop);
+        SKEIN_UNLOCK(self);
+    }
     return rv;
 }
 
@@ -1005,7 +1048,9 @@ skein_hexdigest(skeinObject *self, [[maybe_unused]] PyObject *nothing)
         return PyErr_NoMemory();
     }
 
+    SKEIN_LOCK(self);
     output_hash(self, hashVal, 0, len);
+    SKEIN_UNLOCK(self);
     for (Py_ssize_t i = 0, j = 0; i < len; i++) {
         nib = (hashVal[i] >> 4) & 0x0F;
         hex[j++] = (nib<10) ? '0'+nib : 'a'-10+nib;
@@ -1030,7 +1075,9 @@ skein_copy(skeinObject *self, [[maybe_unused]] PyObject *nothing)
 
     if (new_obj == NULL)
         return NULL;
+    SKEIN_LOCK(self);
     t = skein_getstate(self);
+    SKEIN_UNLOCK(self);
     if (t == NULL) {
         Py_DECREF(new_obj);
         return NULL;
@@ -1070,6 +1117,7 @@ threefish_encrypt_block(threefishObject *self, PyObject *args)
 {
     u64b_t w[16] = {0};
     u64b_t out[16] = {0};
+    u64b_t kw[SKEIN_MAX_STATE_WORDS+4];  /* local snapshot of key schedule */
     ssize_t len = self->blockBytes;
     char *q = NULL;
     Py_buffer buf = {0};
@@ -1093,8 +1141,14 @@ threefish_encrypt_block(threefishObject *self, PyObject *args)
         return NULL;
     }
 
+    /* Snapshot the key schedule under the lock so concurrent set_tweak calls
+       cannot produce a torn read. Encryption itself runs lock-free. */
+    SKEIN_LOCK(self);
+    memcpy(kw, self->kw, sizeof(kw));
+    SKEIN_UNLOCK(self);
+
     BYTES_TO_WORDS(w, buf.buf, len/8);
-    self->encryptor(self->kw+3, self->kw, w, out, 0);
+    self->encryptor(kw+3, kw, w, out, 0);
     WORDS_TO_BYTES((u08b_t *)q, out, len);
     PyBuffer_Release(&buf);
     return rv;
@@ -1109,6 +1163,7 @@ threefish_decrypt_block(threefishObject *self, PyObject *args)
 {
     u64b_t w[16] = {0};
     u64b_t out[16] = {0};
+    u64b_t kw[SKEIN_MAX_STATE_WORDS+4];  /* local snapshot of key schedule */
     ssize_t len = self->blockBytes;
     char *q = NULL;
     Py_buffer buf = {0};
@@ -1132,8 +1187,14 @@ threefish_decrypt_block(threefishObject *self, PyObject *args)
         return NULL;
     }
 
+    /* Snapshot the key schedule under the lock so concurrent set_tweak calls
+       cannot produce a torn read. Decryption itself runs lock-free. */
+    SKEIN_LOCK(self);
+    memcpy(kw, self->kw, sizeof(kw));
+    SKEIN_UNLOCK(self);
+
     BYTES_TO_WORDS(w, buf.buf, len/8);
-    self->decryptor(self->kw+3, self->kw, w, out);
+    self->decryptor(kw+3, kw, w, out);
     WORDS_TO_BYTES((u08b_t *)q, out, len);
     PyBuffer_Release(&buf);
     return rv;
@@ -1504,6 +1565,9 @@ threefish_new(PyObject *self, PyObject *args)
     new_obj->encryptor = encryptor;
     new_obj->decryptor = decryptor;
     new_obj->blockBytes = key.len;
+#ifdef Py_GIL_DISABLED
+    new_obj->lock = (PyMutex){0};
+#endif
 
     /* precompute key schedule */
     BYTES_TO_WORDS(new_obj->kw, tweak.buf, 2);
@@ -1539,15 +1603,39 @@ static struct PyMethodDef skein_functions[] = {
 };
 
 
-/* module init */
+/* module init (multi-phase, PEP 451) */
+
+static int
+skein_module_exec([[maybe_unused]] PyObject *m)
+{
+    if (PyType_Ready(&skeinType) < 0 || PyType_Ready(&threefishType) < 0)
+        return -1;
+    return 0;
+}
+
+static PyModuleDef_Slot skein_module_slots[] = {
+    {Py_mod_exec, skein_module_exec},
+    /* Support multiple interpreters: the only C-level state is the two static
+       PyTypeObject structs, which are written once at type-readying time and
+       thereafter read-only — safe to share across sub-interpreters. */
+#if PY_VERSION_HEX >= 0x030c0000
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#endif
+#ifdef Py_GIL_DISABLED
+    /* Declare that this extension is safe to use without the GIL.
+       All mutable per-object state is protected by PyMutex. */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL}
+};
 
 static struct PyModuleDef skeinmodule = {
     PyModuleDef_HEAD_INIT,
     "_skein",
     NULL,
-    -1,
+    0,              /* m_size: 0 = no module state; module is stateless */
     skein_functions,
-    NULL,
+    skein_module_slots,
     NULL,
     NULL,
     NULL
@@ -1556,11 +1644,5 @@ static struct PyModuleDef skeinmodule = {
 PyMODINIT_FUNC
 PyInit__skein(void)
 {
-    PyObject *m = NULL;
-
-    if (PyType_Ready(&skeinType) < 0 || PyType_Ready(&threefishType) < 0)
-        return NULL;
-    m = PyModule_Create(&skeinmodule);
-    from_state_func = PyObject_GetAttrString(m, "_from_state");
-    return m;
+    return PyModuleDef_Init(&skeinmodule);
 }
