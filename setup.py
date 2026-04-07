@@ -5,15 +5,15 @@ from setuptools import Extension, setup
 
 if sys.platform == "win32":
     extra_compile_args = [
-    "/O2",
-    "/std:c11",
-    # Stack canaries/buffer security checks
-    "/GS",
-    # Warnings
-    "/W4",
-    # Do not use language/MSVC extensions
-    "/permissive-"
-]
+        "/O2",
+        "/std:c11",
+        # Stack canaries/buffer security checks
+        "/GS",
+        # Warnings
+        "/W4",
+        # Do not use language/MSVC extensions
+        "/permissive-"
+    ]
 else:
     extra_compile_args = [
         # "-O0", "-g",  # debug

@@ -19,21 +19,21 @@ jobs:
         include:
           - os: linux-intel
             runs-on: ubuntu-latest
-          # - os: linux-arm
-          #   runs-on: ubuntu-24.04-arm
+          - os: linux-arm
+            runs-on: ubuntu-24.04-arm
           - os: windows-intel
             runs-on: windows-latest
-          # - os: windows-arm
-          #   runs-on: windows-11-arm
-          # - os: macos-intel
-          #   # macos-15-intel is the last x86_64 runner
-          #   runs-on: macos-15-intel
-          # - os: macos-arm
-          #   # macos-14+ (including latest) are ARM64 runners
-          #   runs-on: macos-latest
-          # - os: pyodide
-          #   runs-on: ubuntu-latest
-          #   platform: pyodide
+          - os: windows-arm
+            runs-on: windows-11-arm
+          - os: macos-intel
+            # macos-15-intel is the last x86_64 runner
+            runs-on: macos-15-intel
+          - os: macos-arm
+            # macos-14+ (including latest) are ARM64 runners
+            runs-on: macos-latest
+          - os: pyodide
+            runs-on: ubuntu-latest
+            platform: pyodide
           # - os: android-arm
           #   # GitHub Actions doesn’t currently support the Android emulator on any ARM
           #   # runner. So we build on a non-ARM runner, which will skip the tests.
