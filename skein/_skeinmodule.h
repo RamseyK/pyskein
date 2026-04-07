@@ -201,14 +201,16 @@ typedef struct {
 /* conversions between bytes and 64-bit words */
 
 #ifdef WORDS_BIGENDIAN  /* compatible with big endian platforms, but slow */
-void WORDS_TO_BYTES(u08b_t *dst, const u64b_t *src, size_t bCnt) {
+/* static inline: avoids external-linkage definitions in a header, which would
+   violate ODR if this header were ever included from more than one translation unit. */
+static inline void WORDS_TO_BYTES(u08b_t *dst, const u64b_t *src, size_t bCnt) {
     size_t n;
 
     for (n=0;n<bCnt;n++)
         dst[n] = (u08b_t) (src[n>>3] >> (8*(n&7)));
 }
 
-void BYTES_TO_WORDS(u64b_t *dst, const u08b_t *src, size_t wCnt) {
+static inline void BYTES_TO_WORDS(u64b_t *dst, const u08b_t *src, size_t wCnt) {
     size_t n;
 
     for (n=0;n<8*wCnt;n+=8)

@@ -1426,9 +1426,11 @@ init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
     u64b_t digestBits = stateBits;  /* default value */
     static char *kwlist[] = {"init", "digest_bits", "key", "pers",
                              "public_key", "key_id", "nonce", "tree", NULL};
-    static u08b_t cfg_block[SKEIN_MAX_STATE_WORDS*8]
+    /* Not static: each call writes digestBits and tree params into this buffer,
+       so a shared static would be a data race in free-threaded builds. */
+    u08b_t cfg_block[SKEIN_MAX_STATE_WORDS*8]
         = {0x53, 0x48, 0x41, 0x33, 0x01};  /* "SHA3", version 1 */
-    const static char *tree_errmsg = "'tree' must be triple of tree parameters";
+    static const char *tree_errmsg = "'tree' must be triple of tree parameters";
 
     /* parse arguments */
     if (Py_SIZE(args) > 2) {
