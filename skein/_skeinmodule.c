@@ -1182,7 +1182,7 @@ threefish_encrypt_block(threefishObject *self, PyObject *args)
     u64b_t w[16] = {0};
     u64b_t out[16] = {0};
     u64b_t kw[SKEIN_MAX_STATE_WORDS+4];  /* local snapshot of key schedule */
-    ssize_t len = self->blockBytes;
+    Py_ssize_t len = self->blockBytes;
     char *q = NULL;
     Py_buffer buf = {0};
     PyObject *rv = NULL;
@@ -1228,7 +1228,7 @@ threefish_decrypt_block(threefishObject *self, PyObject *args)
     u64b_t w[16] = {0};
     u64b_t out[16] = {0};
     u64b_t kw[SKEIN_MAX_STATE_WORDS+4];  /* local snapshot of key schedule */
-    ssize_t len = self->blockBytes;
+    Py_ssize_t len = self->blockBytes;
     char *q = NULL;
     Py_buffer buf = {0};
     PyObject *rv = NULL;
