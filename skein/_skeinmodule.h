@@ -94,7 +94,7 @@ typedef struct {
     void(*encryptor)(u64b_t *, u64b_t *, const u64b_t *, u64b_t *, int);
     void(*decryptor)(u64b_t *, u64b_t *, const u64b_t *, u64b_t *);
     u64b_t kw[SKEIN_MAX_STATE_WORDS+4];  /* precomputed key schedule */
-    ssize_t blockBytes;
+    Py_ssize_t blockBytes;
 
 #ifdef Py_GIL_DISABLED
     PyMutex lock;  /* serialises concurrent tweak writes vs. encrypt/decrypt */
