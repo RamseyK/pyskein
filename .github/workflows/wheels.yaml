@@ -3,9 +3,10 @@ name: Build
 on:
   workflow_dispatch:
   pull_request:
-  push:
-    branches:
-      - release-testing
+  # Uncomment to build on pushes to the 'release-testing' branch - useful for testing builds
+  # push:
+  #   branches:
+  #     - release-testing
   release:
     types:
       - published
@@ -83,7 +84,7 @@ jobs:
           path: dist/*.tar.gz
 
   upload:
-    name: Upload to GitHub Releases and PyPi
+    name: Upload Release
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment: pypi
@@ -106,8 +107,9 @@ jobs:
           # GITHUB_TOKEN is automatically provided by GitHub Actions
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish to Pypi
-        uses: pypa/gh-action-pypi-publish@release/v1
-        # To test uploads to TestPyPI, uncomment the following:
-        with:
-          repository-url: https://test.pypi.org/legacy/
+      # Uncomment when we have a PyPI project
+      # - name: Publish to Pypi
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   # To test uploads to TestPyPI, uncomment the following:
+      #   with:
+      #     repository-url: https://test.pypi.org/legacy/
