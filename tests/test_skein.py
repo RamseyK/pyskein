@@ -16,9 +16,8 @@ KATFILE = str(pathlib.Path(__file__).parent / "skein_golden_kat.txt")
 class TestSkeinModule(unittest.TestCase):
     def test_module_basics(self):
         self.assertEqual(skein.StreamCipher.DIGEST_BITS, 2 ** 64 - 1)
-        self.assertTrue(type(skein.skein256())
-                     is type(skein.skein512())
-                     is type(skein.skein1024()))
+        self.assertIs(type(skein.skein256()), type(skein.skein512()))
+        self.assertIs(type(skein.skein256()), type(skein.skein1024()))
 
 
 class SkeinTestMixin:
