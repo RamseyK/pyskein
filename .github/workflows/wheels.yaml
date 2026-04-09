@@ -3,10 +3,10 @@ name: Build
 on:
   workflow_dispatch:
   pull_request:
-  # Uncomment to build on pushes to the 'release-testing' branch - useful for testing builds
-  # push:
-  #   branches:
-  #     - release-testing
+  # Build on pushes to the 'release-testing' branch - useful for testing builds
+  push:
+    branches:
+      - release-testing
   release:
     types:
       - published
