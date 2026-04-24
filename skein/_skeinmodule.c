@@ -721,68 +721,76 @@ Skein_1024_Process_Block(skein_state_t *state,
 static PyObject *
 skein_getstate(skeinObject *sk)
 {
-    PyObject *t = NULL;
+    PyObject *lst = NULL;
+    PyObject *item = NULL;
+    PyObject *rv = NULL;
     u08b_t buf[SKEIN_MAX_BLOCK_BYTES] = {0};
     skein_state_t *state = NULL;
     Py_ssize_t i = 0;
-    Py_ssize_t n = 0;
-    Py_ssize_t len = 0;
     u64b_t x = 0;
 
-    if ((t=PyTuple_New(8)) == NULL)
+    /* Build the state as a list (grows freely, no private _PyTuple_Resize),
+       then convert to a tuple at the end. Each APPEND_NEW consumes its
+       argument's reference on both success and failure paths. */
+#define APPEND_NEW(expr) \
+    do { \
+        if ((item = (expr)) == NULL) goto fail; \
+        if (PyList_Append(lst, item) < 0) { Py_DECREF(item); goto fail; } \
+        Py_DECREF(item); \
+    } while (0)
+
+    if ((lst=PyList_New(0)) == NULL)
         return NULL;
 
     /* intro */
-    PyTuple_SET_ITEM(t, 0, PyLong_FromLong(2)); /* protocol version */
-    PyTuple_SET_ITEM(t, 1, PyLong_FromLong(sk->digestBits));
-    PyTuple_SET_ITEM(t, 2, PyLong_FromLong(sk->stateBytes));
-    PyTuple_SET_ITEM(t, 3, PyLong_FromLong(sk->hashed_bytes));
-    PyTuple_SET_ITEM(t, 4, PyLong_FromLong(sk->missing_bits));
-    PyTuple_SET_ITEM(t, 5, PyBytes_FromStringAndSize((char *)sk->b, sk->bCnt));
+    APPEND_NEW(PyLong_FromLong(2)); /* protocol version */
+    APPEND_NEW(PyLong_FromLong(sk->digestBits));
+    APPEND_NEW(PyLong_FromLong(sk->stateBytes));
+    APPEND_NEW(PyLong_FromLong(sk->hashed_bytes));
+    APPEND_NEW(PyLong_FromLong(sk->missing_bits));
+    APPEND_NEW(PyBytes_FromStringAndSize((char *)sk->b, sk->bCnt));
 
     /* X and T */
     WORDS_TO_BYTES(buf, sk->state.X, sk->stateBytes);
-    PyTuple_SET_ITEM(t, 6, PyBytes_FromStringAndSize((char *)buf,
-                                                     sk->stateBytes));
+    APPEND_NEW(PyBytes_FromStringAndSize((char *)buf, sk->stateBytes));
     WORDS_TO_BYTES(buf, sk->state.T, 2*8);
-    PyTuple_SET_ITEM(t, 7, PyBytes_FromStringAndSize((char *)buf, 2*8));
+    APPEND_NEW(PyBytes_FromStringAndSize((char *)buf, 2*8));
 
     /* finished for sequential hashing */
     if ((state=sk->state.next_tree_level) == NULL)
-        return t;
+        goto done;
 
     /* tree intro */
-    if (_PyTuple_Resize(&t, 15) == -1)  /* including next X and T */
-        return NULL;
     for (i=-1, x=sk->state.tree_blocks; x; i++, x >>= 1);
-    PyTuple_SET_ITEM(t, 8, PyLong_FromLong(i));  /* log_2(tree_blocks_leaf) */
+    APPEND_NEW(PyLong_FromLong(i));  /* log_2(tree_blocks_leaf) */
     for (i=-1, x=state->tree_blocks; x; i++, x >>= 1);
-    PyTuple_SET_ITEM(t, 9, PyLong_FromLong(i));  /* log_2(tree_blocks_node) */
-    PyTuple_SET_ITEM(t, 10, PyLong_FromLong(sk->state.remaining_tree_levels+1));
+    APPEND_NEW(PyLong_FromLong(i));  /* log_2(tree_blocks_node) */
+    APPEND_NEW(PyLong_FromLong(sk->state.remaining_tree_levels+1));
     WORDS_TO_BYTES(buf, &sk->state.remaining_tree_blocks, 8);
-    PyTuple_SET_ITEM(t, 11, PyBytes_FromStringAndSize((char *)buf, 8));
+    APPEND_NEW(PyBytes_FromStringAndSize((char *)buf, 8));
 
     /* all tree states */
-    n = 12;
-    len = 15;
     while (1) {
         WORDS_TO_BYTES(buf, state->X, sk->stateBytes);
-        PyTuple_SET_ITEM(t, n++, PyBytes_FromStringAndSize((char *)buf,
-                                                           sk->stateBytes));
+        APPEND_NEW(PyBytes_FromStringAndSize((char *)buf, sk->stateBytes));
         WORDS_TO_BYTES(buf, state->T, 2*8);
-        PyTuple_SET_ITEM(t, n++, PyBytes_FromStringAndSize((char *)buf, 2*8));
+        APPEND_NEW(PyBytes_FromStringAndSize((char *)buf, 2*8));
         WORDS_TO_BYTES(buf, &state->remaining_tree_blocks, 8);
-        PyTuple_SET_ITEM(t, n++, PyBytes_FromStringAndSize((char *)buf, 8));
+        APPEND_NEW(PyBytes_FromStringAndSize((char *)buf, 8));
 
         if ((state=state->next_tree_level) == NULL)
             break;
-
-        len+=3;
-        if (_PyTuple_Resize(&t, len) == -1)
-            return NULL;
     }
 
-    return t;
+done:
+    rv = PyList_AsTuple(lst);
+    Py_DECREF(lst);
+    return rv;
+
+fail:
+    Py_DECREF(lst);
+    return NULL;
+#undef APPEND_NEW
 }
 
 
@@ -805,21 +813,21 @@ skein_setstate(skeinObject *sk, PyObject *t)
 
     /* minimum length and protocol version */
     if ((len=PyTuple_Size(t)) < 8  /* includes error code -1 */
-            || PyLong_AsLong(PyTuple_GET_ITEM(t, 0)) != 2)
+            || PyLong_AsLong(PyTuple_GetItem(t, 0)) != 2)
         return 0;
 
     /* digestBits */
-    sk->digestBits = PyLong_AsLong(PyTuple_GET_ITEM(t, 1));
+    sk->digestBits = PyLong_AsLong(PyTuple_GetItem(t, 1));
     if (sk->digestBits == 0 || sk->digestBits % 8 != 0)  /* also captures error code -1 */
         return 0;
 
     /* stateBytes */
-    sk->stateBytes = PyLong_AsLong(PyTuple_GET_ITEM(t, 2));
+    sk->stateBytes = PyLong_AsLong(PyTuple_GetItem(t, 2));
     stateWords = sk->stateBytes / 8;
 
     /* hashed_bytes and missing_bits */
-    sk->hashed_bytes = PyLong_AsLongLong(PyTuple_GET_ITEM(t, 3));
-    sk->missing_bits = PyLong_AsLongLong(PyTuple_GET_ITEM(t, 4));
+    sk->hashed_bytes = PyLong_AsLongLong(PyTuple_GetItem(t, 3));
+    sk->missing_bits = PyLong_AsLongLong(PyTuple_GetItem(t, 4));
     if (sk->missing_bits > 7)  /* must be in [0, 7] */
         return 0;
 
@@ -832,25 +840,25 @@ skein_setstate(skeinObject *sk, PyObject *t)
     }
 
     /* b and bCnt */
-    buf = PyTuple_GET_ITEM(t, 5);
+    buf = PyTuple_GetItem(t, 5);
     if (!PyBytes_Check(buf))
         return 0;
     if ((i=PyBytes_Size(buf)) > sk->stateBytes)
         return 0;
-    memcpy(sk->b, PyBytes_AS_STRING(buf), i);
+    memcpy(sk->b, PyBytes_AsString(buf), i);
     sk->bCnt = i;
     if (sk->missing_bits && !sk->bCnt)  /* missing_bits requires at least one buffered byte */
         return 0;
 
     /* X and T */
-    buf = PyTuple_GET_ITEM(t, 6);
+    buf = PyTuple_GetItem(t, 6);
     if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != sk->stateBytes))
         return 0;
-    BYTES_TO_WORDS(sk->state.X, PyBytes_AS_STRING(buf), stateWords);
-    buf = PyTuple_GET_ITEM(t, 7);
+    BYTES_TO_WORDS(sk->state.X, PyBytes_AsString(buf), stateWords);
+    buf = PyTuple_GetItem(t, 7);
     if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != 2*8))
         return 0;
-    BYTES_TO_WORDS(sk->state.T, PyBytes_AS_STRING(buf), 2);
+    BYTES_TO_WORDS(sk->state.T, PyBytes_AsString(buf), 2);
 
     /* finalize in case of sequential hashing */
     if (len == 8) {
@@ -873,10 +881,10 @@ skein_setstate(skeinObject *sk, PyObject *t)
     sk->state.tree_blocks = 1 << ((u64b_t)tree_leaf);
     tree_blocks = 1 << ((u64b_t)tree_fan);
     sk->state.remaining_tree_levels = remaining_levels = tree_max-1;
-    buf = PyTuple_GET_ITEM(t, 11);
+    buf = PyTuple_GetItem(t, 11);
     if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != 8))
         return 0;
-    BYTES_TO_WORDS(&x, PyBytes_AS_STRING(buf), 1);
+    BYTES_TO_WORDS(&x, PyBytes_AsString(buf), 1);
     if (x > sk->state.tree_blocks)
         return 0;
     sk->state.remaining_tree_blocks = x;
@@ -901,18 +909,18 @@ skein_setstate(skeinObject *sk, PyObject *t)
         state->remaining_tree_levels = remaining_levels;
 
         /* values from tuple */
-        buf = PyTuple_GET_ITEM(t, i++);
+        buf = PyTuple_GetItem(t, i++);
         if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != sk->stateBytes))
             return 0;
-        BYTES_TO_WORDS(state->X, PyBytes_AS_STRING(buf), stateWords);
-        buf = PyTuple_GET_ITEM(t, i++);
+        BYTES_TO_WORDS(state->X, PyBytes_AsString(buf), stateWords);
+        buf = PyTuple_GetItem(t, i++);
         if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != 2*8))
             return 0;
-        BYTES_TO_WORDS(state->T, PyBytes_AS_STRING(buf), 2);
-        buf = PyTuple_GET_ITEM(t, i++);
+        BYTES_TO_WORDS(state->T, PyBytes_AsString(buf), 2);
+        buf = PyTuple_GetItem(t, i++);
         if (!PyBytes_Check(buf) || (PyBytes_Size(buf) != 8))
             return 0;
-        BYTES_TO_WORDS(&x, PyBytes_AS_STRING(buf), 1);
+        BYTES_TO_WORDS(&x, PyBytes_AsString(buf), 1);
         if (x > tree_blocks)
             return 0;
         state->remaining_tree_blocks = x;
@@ -1003,6 +1011,7 @@ skein_update(skeinObject *self, PyObject *args, PyObject *kw)
         if (bytes > buf.len) {
             PyErr_SetString(PyExc_ValueError,
                             "'bits' larger than 8*len(message)");
+            PyBuffer_Release(&buf);
             return NULL;
         }
         bits %= 8;
@@ -1011,6 +1020,7 @@ skein_update(skeinObject *self, PyObject *args, PyObject *kw)
     }
     else {
         PyErr_SetString(PyExc_ValueError, "'bits' may not be negative");
+        PyBuffer_Release(&buf);
         return NULL;
     }
 
@@ -1062,7 +1072,7 @@ PyDoc_STRVAR(skein_digest__doc__,
 static PyObject *
 skein_digest(skeinObject *self, PyObject *args)
 {
-    Py_ssize_t argc = PyTuple_GET_SIZE(args);
+    Py_ssize_t argc = PyTuple_Size(args);
     u64b_t len = (self->digestBits-1)/8+1;
     u64b_t start = 0;
     u64b_t stop = len;
@@ -1086,7 +1096,7 @@ skein_digest(skeinObject *self, PyObject *args)
         return NULL;
     if (start < stop) {
         SKEIN_LOCK(self);
-        output_hash(self, (u08b_t *)PyBytes_AS_STRING(rv), start, stop);
+        output_hash(self, (u08b_t *)PyBytes_AsString(rv), start, stop);
         SKEIN_UNLOCK(self);
     }
     return rv;
@@ -1198,10 +1208,13 @@ threefish_encrypt_block(threefishObject *self, PyObject *args)
 
     /* set up output buffer */
     rv = PyBytes_FromStringAndSize(NULL, len);
-    if (rv == NULL)
+    if (rv == NULL) {
+        PyBuffer_Release(&buf);
         return NULL;
+    }
     if ((q = PyBytes_AsString(rv)) == NULL) {
         Py_DECREF(rv);
+        PyBuffer_Release(&buf);
         return NULL;
     }
 
@@ -1244,10 +1257,13 @@ threefish_decrypt_block(threefishObject *self, PyObject *args)
 
     /* set up output buffer */
     rv = PyBytes_FromStringAndSize(NULL, len);
-    if (rv == NULL)
+    if (rv == NULL) {
+        PyBuffer_Release(&buf);
         return NULL;
+    }
     if ((q = PyBytes_AsString(rv)) == NULL) {
         Py_DECREF(rv);
+        PyBuffer_Release(&buf);
         return NULL;
     }
 
@@ -1290,13 +1306,13 @@ skein_dealloc(PyObject *self)
         PyMem_Free(prev);
     }
 
-    PyObject_Del(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static void
 threefish_dealloc(PyObject *self)
 {
-    PyObject_Del(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyTypeObject skeinType = {
@@ -1382,7 +1398,7 @@ static PyTypeObject threefishType = {
     "next_tree_level->block_processor".
 */
 
-PyObject*
+static int
 init_tree(skein_state_t *state,
           u08b_t tree_leaf, u08b_t tree_fan, u08b_t tree_max)
 {
@@ -1390,8 +1406,10 @@ init_tree(skein_state_t *state,
 
     /* initialize the second state */
     end = PyMem_Malloc(sizeof(skein_state_t));
-    if (end == NULL)
-        return PyErr_NoMemory();
+    if (end == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
     memcpy(end->X, state->X, sizeof(end->X));
     memcpy(end->T, state->T, sizeof(end->T));
     end->block_processor = state->block_processor; /* basic processor */
@@ -1404,7 +1422,7 @@ init_tree(skein_state_t *state,
     state->remaining_tree_levels = tree_max-1;
     state->next_tree_level = end;
     state->T[1] |= ((u64b_t)1)<<SKEIN_T1_POS_LEVEL;
-    return NULL;
+    return 1;
 }
 
 int
@@ -1445,8 +1463,18 @@ init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
             goto error;
     if (dbobj) {
         digestBits = PyLong_AsUnsignedLongLong(dbobj);
-        if (PyErr_Occurred() || (digestBits == 0)) {
+        if (PyErr_Occurred()) {
+            /* Only convert expected conversion errors to ValueError;
+               propagate MemoryError/KeyboardInterrupt/etc. unchanged. */
+            if (!PyErr_ExceptionMatches(PyExc_OverflowError) &&
+                !PyErr_ExceptionMatches(PyExc_TypeError))
+                goto error;
             PyErr_Clear();
+            PyErr_SetString(PyExc_ValueError,
+                            "digest_bits must be between 1 and 2**64-1");
+            goto error;
+        }
+        if (digestBits == 0) {
             PyErr_SetString(PyExc_ValueError,
                             "digest_bits must be between 1 and 2**64-1");
             goto error;
@@ -1522,7 +1550,8 @@ init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
     /* begin the message UBI call; caller will stream message data via update() */
     HASH_INIT(new_obj, MSG);
     if (tree_max)
-        init_tree(&new_obj->state, tree_leaf, tree_fan, tree_max);
+        if (!init_tree(&new_obj->state, tree_leaf, tree_fan, tree_max))
+            goto error;
 
     if (key.buf != NULL)
         PyBuffer_Release(&key);
