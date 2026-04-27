@@ -36,6 +36,6 @@ else:
 ext = Extension("_skein",
                 sources=["skein/threefish.c", "skein/_skeinmodule.c"],
                 include_dirs=["skein"],
-                extra_compiler_args=extra_compile_args,
+                extra_compile_args=extra_compile_args,
                 extra_link_args=[])
 setup(ext_modules=[ext])
