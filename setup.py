@@ -27,11 +27,8 @@ else:
         "-Wimplicit-fallthrough",
         "-Wno-unused-parameter",
         # Position-independent
-        "-fPIE",
         "-fno-delete-null-pointer-checks",
-        "-fno-strict-aliasing",
-        # Do not use language extensions
-        "-pedantic"
+        "-fno-strict-aliasing"
     ]
 
 ext = Extension("_skein",
