@@ -1,6 +1,6 @@
 [project]
 name = "pyskein"
-version = "2.0"
+version = "2.1"
 description = "PySkein is a Python native extension implementation the Skein hash algorithm. Skein was one of the five finalists of the NIST SHA-3 Competition."
 requires-python = ">=3.11"
 readme = {file = "README.md", content-type = "text/markdown"}

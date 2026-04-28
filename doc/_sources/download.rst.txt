@@ -29,6 +29,13 @@ any release of PySkein.
 Changes between version
 -----------------------
 
+2.1
+    - Fixed additional thread-safety issues when used in Python free-threading builds
+
+    - Builds now use hardened compiler configuration
+
+    - Fixed stability and security issues reported by @devdanzin
+
 2.0
     - Fixed numerous bugs, memory safety issues, and undefined behavior
 
