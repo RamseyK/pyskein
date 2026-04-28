@@ -21,6 +21,7 @@
 ### Skein-PRNG ###
 ###
 import random
+import threading
 
 from _skein import skein256, skein512, skein1024, threefish  # noqa
 
@@ -41,6 +42,10 @@ class Random(random.Random):
         - 'seed' as in method seed().
         - 'hasher' may be skein256, skein512, or skein1024.
         """
+        # RLock not Lock: getrandbits() calls read() which would self-deadlock
+        # on a plain Lock.  Set before super().__init__() because that calls
+        # self.seed(), which acquires the lock.
+        self._lock = threading.RLock()
         self._hasher = hasher
         self._state_bytes = hasher().block_size
         self._state = bytes(self._state_bytes)
@@ -58,16 +63,23 @@ class Random(random.Random):
         If seed is a bytes object, set state according to Skein specification.
         Otherwise derive a bytes object from the seed using random.Random.
         """
-        if not isinstance(seed, bytes):
+
+        if isinstance(seed, (bytes, bytearray, memoryview)):
+            seed = bytes(seed)
+        elif seed is not None:
             r = self._random.Random(seed)
             seed = bytes(r.randrange(256) for _ in range(self._state_bytes))
-        # Mix the new seed into the existing state via Skein rather than
-        # replacing it outright, so seeding can be called multiple times to
-        # accumulate entropy without resetting the PRNG to a known state.
-        self._state = self._hasher(self._state + seed).digest()
-        self._buffer = b""
-        self._number = 0
-        self._bits = 0
+        else:
+            seed = bytes(self._state_bytes)
+
+        with self._lock:
+            # Mix the new seed into the existing state via Skein rather than
+            # replacing it outright, so seeding can be called multiple times to
+            # accumulate entropy without resetting the PRNG to a known state.
+            self._state = self._hasher(self._state + seed).digest()
+            self._buffer = b""
+            self._number = 0
+            self._bits = 0
 
     def read(self, n: int):
         """Return n random bytes.
@@ -79,46 +91,51 @@ class Random(random.Random):
         """
         if n < 0:
             raise ValueError("number of random bytes needs to be >= 0")
-        if len(self._buffer) < n:
-            chunks = [self._buffer]
-            blocks = ((n - len(self._buffer) - 1) // self._state_bytes) + 1
-            for _ in range(1, blocks + 1):
-                # Each iteration uses the current state as the Threefish key.
-                # Encrypting counter0 produces the next state (advancing the
-                # internal RNG); encrypting counter1 produces output bytes.
-                # This two-block scheme keeps state and output derivation
-                # independent, preventing an observer of output from recovering
-                # the state.
-                output = threefish(self._state, self._TWEAK).encrypt_block
-                self._state = output(self._counter0)
-                chunks.append(output(self._counter1))
-            self._buffer = b"".join(chunks)
-            assert len(self._buffer) >= n
-        res, self._buffer = self._buffer[:n], self._buffer[n:]
+        with self._lock:
+            if len(self._buffer) < n:
+                chunks = [self._buffer]
+                blocks = ((n - len(self._buffer) - 1) // self._state_bytes) + 1
+                for _ in range(1, blocks + 1):
+                    # Each iteration uses the current state as the Threefish key.
+                    # Encrypting counter0 produces the next state (advancing the
+                    # internal RNG); encrypting counter1 produces output bytes.
+                    # This two-block scheme keeps state and output derivation
+                    # independent, preventing an observer of output from recovering
+                    # the state.
+                    output = threefish(self._state, self._TWEAK).encrypt_block
+                    self._state = output(self._counter0)
+                    chunks.append(output(self._counter1))
+                self._buffer = b"".join(chunks)
+                assert len(self._buffer) >= n
+            res, self._buffer = self._buffer[:n], self._buffer[n:]
         return res
 
     def getrandbits(self, k):
         """Return an int with k random bits"""
-        bits = self._bits
-        for b in self.read((k - self._bits - 1) // 8 + 1):
-            self._number |= b << bits
-            bits += 8
-        r = self._number & ((1 << k) - 1)
-        self._number >>= k
-        self._bits = bits - k
+        with self._lock:
+            bits = self._bits
+            for b in self.read((k - self._bits - 1) // 8 + 1):
+                self._number |= b << bits
+                bits += 8
+            r = self._number & ((1 << k) - 1)
+            self._number >>= k
+            self._bits = bits - k
         return r
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)"""
-        return self.getrandbits(self._BPF) * self._RECIP_BPF
+        with self._lock:
+            return self.getrandbits(self._BPF) * self._RECIP_BPF
 
     def getstate(self):
         """Return internal state; can be passed to setstate() later."""
-        return (self._state, self._buffer, self._number, self._bits, self.gauss_next)
+        with self._lock:
+            return (self._state, self._buffer, self._number, self._bits, self.gauss_next)
 
     def setstate(self, state):
         """Restore internal state from object returned by getstate()."""
-        (self._state, self._buffer, self._number, self._bits, self.gauss_next) = state
+        with self._lock:
+            (self._state, self._buffer, self._number, self._bits, self.gauss_next) = state
 
 
 del random
@@ -132,18 +149,21 @@ class RandomBytes:
         self._hasher = hasher
         self.state_size = hasher().block_size
         self._state = bytes(self.state_size)
+        self._lock = threading.Lock()
         self.seed(seed)
 
     def seed(self, seed):
         """Reseed with bytes object 'seed'"""
-        h = self._hasher(self._state + seed)
-        self._state = h.digest()
+        with self._lock:
+            h = self._hasher(self._state + seed)
+            self._state = h.digest()
 
     def read(self, n: int):
         """Return 'n' pseudo-random bytes"""
-        h = self._hasher(self._state, digest_bits=8 * (self.state_size + n))
-        self._state = h.digest(0, self.state_size)
-        return h.digest(self.state_size, self.state_size + n)
+        with self._lock:
+            h = self._hasher(self._state, digest_bits=8 * (self.state_size + n))
+            self._state = h.digest(0, self.state_size)
+            return h.digest(self.state_size, self.state_size + n)
 
 
 ###
@@ -157,21 +177,25 @@ class StreamCipher:
     def __init__(self, key: bytes, nonce: bytes = b"", hasher=skein512):
         self._h = hasher(key=key, nonce=nonce, digest_bits=self.DIGEST_BITS)
         self._pos = 0
+        self._lock = threading.Lock()
 
     def keystream(self, n: int):
         """Return 'n' bytes from the keystream"""
-        newpos = self._pos + n
-        stream = self._h.digest(self._pos, newpos)
-        self._pos = newpos
+        with self._lock:
+            stream = self._h.digest(self._pos, self._pos + n)
+            self._pos += n
         return stream
 
-    def encrypt(self, plain: str | bytes):
-        """Encrypt bytes object 'plain' with keystream"""
-        stream = self.keystream(len(plain))
-        try:
-            return bytes(x ^ y for x, y in zip(plain, stream))
-        except TypeError as e:
-            self._pos -= len(plain)
-            raise TypeError("argument must be a bytes object") from e
+    def encrypt(self, plain):
+        """Encrypt bytes-like object 'plain' with keystream"""
+        if not isinstance(plain, (bytes, bytearray, memoryview)):
+            raise TypeError("argument must be a bytes object")
+
+        # Reserve the keystream slice atomically with the position advance so
+        # concurrent encrypt() calls cannot reuse the same keystream bytes.
+        with self._lock:
+            stream = self._h.digest(self._pos, self._pos + len(plain))
+            self._pos += len(plain)
+        return bytes(x ^ y for x, y in zip(plain, stream))
 
     decrypt = encrypt

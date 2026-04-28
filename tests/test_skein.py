@@ -19,6 +19,44 @@ class TestSkeinModule(unittest.TestCase):
         self.assertIs(type(skein.skein256()), type(skein.skein512()))
         self.assertIs(type(skein.skein256()), type(skein.skein1024()))
 
+    # Regression guards for the FT thread-safety findings (W1/W2/W3): each
+    # of StreamCipher, Random, and RandomBytes must serialise concurrent
+    # state mutation; without a lock free-threaded builds reuse keystream
+    # bytes / produce duplicate "random" output (two-time-pad break for the
+    # cipher).
+    def test_streamcipher_has_lock(self):
+        self.assertTrue(hasattr(skein.StreamCipher(b"key"), "_lock"))
+
+    def test_random_has_lock(self):
+        self.assertTrue(hasattr(skein.Random(b"seed"), "_lock"))
+
+    def test_randombytes_has_lock(self):
+        self.assertTrue(hasattr(skein.RandomBytes(b"seed"), "_lock"))
+
+    def test_streamcipher_concurrent_keystream_unique(self):
+        # Functional check for W1: every keystream slice must be unique
+        # because each call atomically advances the position.
+        import threading
+
+        c = skein.StreamCipher(b"shared-key")
+        chunks = []
+        chunks_lock = threading.Lock()
+        barrier = threading.Barrier(4)
+
+        def worker():
+            barrier.wait()
+            local = [c.keystream(64) for _ in range(50)]
+            with chunks_lock:
+                chunks.extend(local)
+
+        threads = [threading.Thread(target=worker) for _ in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(len(chunks), len(set(chunks)),
+                         "keystream chunks must not repeat under concurrent use")
+
 
 class SkeinTestMixin:
 
@@ -108,6 +146,7 @@ class SkeinTestMixin:
         self.assertRaises(TypeError, _skein._from_state, 1)
         self.assertRaises(ValueError, _skein._from_state, (1,))
 
+
     def test_digest_sizes(self):
         for bits in (1, 2 ** 31 - 1, 2 ** 32, 2 ** 63, 2 ** 64 - 1):
             self.assertEqual(self.HASHER_INST(digest_bits=bits).digest_bits, bits)
@@ -168,6 +207,17 @@ class SkeinTestMixin:
         skein.Random(seed=42, hasher=self.HASHER_INST)
         # skein.Random(frozenset({1,2,3}), hasher=self.HASHER_INST)
         skein.Random("str", hasher=self.HASHER_INST)
+
+    def test_prng_seed_bytes_like_parity(self):
+        # C-10: bytes / bytearray / memoryview seeds must produce the same
+        # Skein-derived stream (previously bytearray fell through to the
+        # stdlib path and yielded a different stream; memoryview crashed).
+        a = skein.Random(b"hello", hasher=self.HASHER_INST)
+        b = skein.Random(bytearray(b"hello"), hasher=self.HASHER_INST)
+        c = skein.Random(memoryview(b"hello"), hasher=self.HASHER_INST)
+        ref = [a.random() for _ in range(5)]
+        self.assertEqual([b.random() for _ in range(5)], ref)
+        self.assertEqual([c.random() for _ in range(5)], ref)
 
     def test_prng_state_inspection(self):
         r = skein.Random(b"x", hasher=self.HASHER_INST)
@@ -331,6 +381,22 @@ class ThreefishTestMixin:
         set(bytes(range(1, 17)))
         self.assertEqual(self.t.tweak, bytes(range(1, 17)))
 
+        # C-3: setter must accept any bytes-like (bytearray, memoryview)
+        # to match the constructor's y* buffer-protocol parsing.
+        self.t.tweak = bytearray(b"\x02" * 16)
+        self.assertEqual(self.t.tweak, b"\x02" * 16)
+        self.t.tweak = memoryview(b"\x03" * 16)
+        self.assertEqual(self.t.tweak, b"\x03" * 16)
+        # Length validation still applies through the buffer-protocol path.
+        self.assertRaises(ValueError, set, memoryview(b"\x04" * 8))
+
+    def test_del_tweak_raises_attribute_error(self):
+        # F9 regression: `del t.tweak` invoked the setter with NULL value;
+        # without the new NULL guard PyByteArray_Check would deref ob_type
+        # and SEGV.
+        with self.assertRaises(AttributeError):
+            del self.t.tweak
+
     def test_encrypt_block(self):
         self.assertRaises(ValueError, self.t.encrypt_block, bytes(1))
         self.assertRaises(ValueError, self.t.encrypt_block, bytes(self.KEYLEN + 1))
@@ -414,6 +480,59 @@ class TestErrorPaths(unittest.TestCase):
         self.assertLess(abs(r1 - r0) / 1024, 1024,
                         f"RSS grew {(r1-r0)/1024:.0f} KB across 100k error-path trips")
 
+    def test_evil_tree_index_does_not_crash(self):
+        # F12 regression: PySequence_Fast(tree, ...) returns the user's list
+        # unchanged for a list input.  A custom __index__ on tree entries
+        # could mutate the list mid-iteration, freeing the items the
+        # subsequent get_tree_param calls dereference (use-after-free).
+        # init_skein now snapshots to an immutable tuple before calling
+        # get_tree_param.
+        class Evil:
+            def __init__(self, list_ref):
+                self.list_ref = list_ref
+                self.fired = False
+
+            def __index__(self):
+                if not self.fired:
+                    self.fired = True
+                    self.list_ref.clear()
+                return 1
+
+        my_list = [None, None, None]
+        my_list[0] = Evil(my_list)
+        my_list[1] = Evil(my_list)
+        my_list[2] = Evil(my_list)
+        # Behaviour after the user mutates their own input is undefined-
+        # but-safe: any of success / ValueError / TypeError is acceptable
+        # provided we don't crash.
+        try:
+            skein.skein512(b"x", tree=my_list)
+        except (TypeError, ValueError):
+            pass
+
+    def test_init_error_path_tree_no_leak(self):
+        # F5 regression: init_skein's error path used to overwrite
+        # next_tree_level with NULL, leaking the chaining-state linked list
+        # if init_tree had already populated it.  Run many tree-mode
+        # constructions + dealloc cycles and assert RSS stays bounded.
+        import gc, resource
+
+        def rss():
+            return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+
+        for _ in range(50):                            # warm up
+            h = skein.skein512(b"x" * 1000, tree=(2, 2, 10))
+            h.update(b"y" * 5000)
+            del h
+        gc.collect(); r0 = rss()
+        for _ in range(2000):
+            h = skein.skein512(b"x" * 1000, tree=(2, 2, 10))
+            h.update(b"y" * 5000)
+            del h
+        gc.collect(); r1 = rss()
+        self.assertLess(abs(r1 - r0) / 1024, 1024,
+                        f"RSS grew {(r1-r0)/1024:.0f} KB across 2000 tree dealloc cycles")
+
 
 class TestDigestBitsGuard(unittest.TestCase):
     """PyErr_Clear at init_skein:1449 is guarded to only clear expected
@@ -461,6 +580,43 @@ class TestDigestSliceErrors(unittest.TestCase):
             h.digest(0, 65)
         with self.assertRaisesRegex(ValueError, r"0<=start<=stop<=digest_size"):
             h.digest(0, 2 ** 40)
+
+    def test_huge_digest_bits_full_digest_capped(self):
+        # F8 regression: digest_bits up to 2**64-1 is permitted (StreamCipher
+        # depends on that), but the actual byte allocation must be capped so
+        # a single digest() call can't OOM-abort the process.
+        h = skein.skein512(b"x", digest_bits=2 ** 40)
+        with self.assertRaisesRegex(ValueError, "digest range too large"):
+            h.digest()
+
+    def test_huge_digest_bits_hexdigest_capped(self):
+        # F10 regression: hexdigest takes no arguments and always allocates
+        # 3x digest_size; capped via the same helper as digest().
+        h = skein.skein512(b"x", digest_bits=2 ** 40)
+        with self.assertRaisesRegex(ValueError, "digest range too large"):
+            h.hexdigest()
+
+    def test_digest_slice_within_cap_works(self):
+        # Negative side of the same fix: small slices through a huge
+        # digest_bits hash must still succeed.  This is the StreamCipher
+        # use case.
+        h = skein.skein512(b"x", digest_bits=2 ** 40)
+        self.assertEqual(len(h.digest(0, 64)), 64)
+
+    def test_keystream_does_not_cycle_at_2_to_32_blocks(self):
+        # F1 regression: output_hash's per-block counter must use the full
+        # 8-byte width, not 4.  With the historic truncation, the keystream
+        # repeated every 2**32 blocks (= 256 GB on skein-512).
+        h = skein.skein512(b"key-material", digest_bits=2 ** 64 - 1)
+        b0 = h.digest(0, 64)
+        b1 = h.digest(2 ** 38, 2 ** 38 + 64)         # 256 GB → block 2**32
+        self.assertNotEqual(
+            b0, b1,
+            "keystream block at offset 0 must differ from block at 256 GB")
+        # And cross-check with skein-256 at its own wrap point (128 GB).
+        h2 = skein.skein256(b"key", digest_bits=2 ** 64 - 1)
+        self.assertNotEqual(h2.digest(0, 32),
+                            h2.digest(2 ** 37, 2 ** 37 + 32))
 
 
 class TestThreefishConstructorErrors(unittest.TestCase):
@@ -568,6 +724,35 @@ class TestFromStateValidation(unittest.TestCase):
         for extra in (1, 2):
             bad = tuple(s + [b"\x00"] * extra)
             self.assertRaises(ValueError, _skein._from_state, bad)
+
+    def test_tree_pickle_roundtrip(self):
+        # F3 regression: skein_setstate's PyTuple_GetSlice path is reached
+        # only when restoring a tree-mode hash via pickle.  Round-trip a
+        # tree-mode hash and confirm the digest survives.
+        h = skein.skein512(b"data", tree=(2, 2, 10))
+        h.update(b"more")
+        copy = pickle.loads(pickle.dumps(h))
+        self.assertEqual(h.digest(), copy.digest())
+
+    def test_typeerror_from_get_tree_param_is_preserved(self):
+        # C-2 regression: _from_state used to overwrite skein_setstate's
+        # precise TypeError with a generic ValueError("invalid state").
+        # A non-int tree-leaf entry now surfaces the underlying TypeError.
+        s = list(self._state(tree=(2, 2, 10)))
+        s[8] = 1.5      # PyFloat → get_tree_param sets TypeError
+        with self.assertRaisesRegex(TypeError,
+                                     "tree parameters have to be integers"):
+            _skein._from_state(tuple(s))
+
+    def test_value_error_from_get_tree_param_is_preserved(self):
+        # Same C-2 fix on the ValueError side: out-of-range tree params
+        # surface get_tree_param's specific message rather than the generic
+        # "invalid state".
+        s = list(self._state(tree=(2, 2, 10)))
+        s[8] = 0        # tree_leaf min is 1
+        with self.assertRaisesRegex(ValueError,
+                                     "tree parameters have to be between"):
+            _skein._from_state(tuple(s))
 
 
 if __name__ == "__main__":

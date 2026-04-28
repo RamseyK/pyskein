@@ -204,26 +204,32 @@ threefish_get_tweak(threefishObject *self, void *closure)
 static int
 threefish_set_tweak(threefishObject *self, PyObject *value, void *closure)
 {
-    char *buf = NULL;
-    Py_ssize_t len = 0;
+    Py_buffer view = {0};
     PyObject *h = NULL;
 
-    if (PyByteArray_Check(value))
-        if ((h = value = PyBytes_FromObject(value)) == NULL)
-            return -1;
-    if (PyBytes_AsStringAndSize(value, &buf, &len) < 0)
-        goto error;
-    if (len != 16) {
+    /* `del t.tweak` invokes the setter with NULL — without this guard the
+       PyByteArray_Check below would dereference value->ob_type and SEGV. */
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "tweak cannot be deleted");
+        return -1;
+    }
+    /* Accept any bytes-like (bytes, bytearray, memoryview) to mirror the
+       constructor, which uses the y* buffer-protocol format. */
+    if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
+        return -1;
+    if (view.len != 16) {
         PyErr_SetString(PyExc_ValueError, "tweak value must have 16 bytes");
         goto error;
     }
     SKEIN_LOCK(self);
-    BYTES_TO_WORDS(self->kw, (u08b_t *)buf, 2);
+    BYTES_TO_WORDS(self->kw, (const u08b_t *)view.buf, 2);
     self->kw[2] = self->kw[0] ^ self->kw[1];  /* update extended-tweak parity (T2 = T0^T1) */
     SKEIN_UNLOCK(self);
+    PyBuffer_Release(&view);
     Py_CLEAR(h);
     return 0;
 error:
+    PyBuffer_Release(&view);
     Py_CLEAR(h);
     return -1;
 }
@@ -327,11 +333,19 @@ tree_block_processor(skein_state_t *state,
     u08b_t w[SKEIN_MAX_BLOCK_BYTES] = {0};
     u08b_t remaining_levels = state->remaining_tree_levels;
     struct args_t *args = NULL;
+    int ok = 0;
+    /* Per-call rendezvous semaphore state.  Every code path leading to
+       `cleanup` must leave the semaphore in a known state so the destroy at
+       the bottom is safe.  See comments at acquire/release sites. */
+    int lock_held_by_parent = 0;
+    int parallel_in_flight = 0;
 
     if (remaining_levels == 0) {  /* we do not have to care about nodes */
-        basic_processor(state, data, count, stateBytes);
+        if (!basic_processor(state, data, count, stateBytes))
+            goto cleanup;
     } else if (count < n) {  /* data fits into this node */
-        basic_processor(state, data, count, stateBytes);
+        if (!basic_processor(state, data, count, stateBytes))
+            goto cleanup;
         state->remaining_tree_blocks -= count;
     } else {
         for (last_level = next_level;
@@ -340,7 +354,8 @@ tree_block_processor(skein_state_t *state,
 
         /* fill the current node except for the last block */
         if (n > 1) {
-            basic_processor(state, data, n-1, stateBytes);
+            if (!basic_processor(state, data, n-1, stateBytes))
+                goto cleanup;
             count -= n-1;
             data += (n-1)*stateBytes;
         }
@@ -349,17 +364,25 @@ tree_block_processor(skein_state_t *state,
         while (count) {
             /* hash the last block */
             state->T[1] |= SKEIN_T1_FLAG_FINAL;
-            basic_processor(state, data, 1, stateBytes);
+            if (!basic_processor(state, data, 1, stateBytes))
+                goto cleanup;
             --count;
             data += stateBytes;
             if (state2) {
+                /* Rendezvous with the worker started in the previous
+                   iteration.  Worker has called PyThread_release_lock
+                   (sem++); we now decrement it (sem--). */
                 PyThread_acquire_lock(args->lock, 1);
+                lock_held_by_parent = 1;
+                parallel_in_flight = 0;
                 state2->T[1] |= SKEIN_T1_FLAG_FINAL;
                 data += n*stateBytes;  /* this was left out below */
-                basic_processor(state2, data, 1, stateBytes);
+                if (!basic_processor(state2, data, 1, stateBytes))
+                    goto cleanup;
                 --count;
                 data += stateBytes;
                 PyThread_release_lock(args->lock);
+                lock_held_by_parent = 0;
 
                 /* tweak correction */
                 state->T[0] += state->tree_blocks*stateBytes;
@@ -372,7 +395,7 @@ tree_block_processor(skein_state_t *state,
                 state->next_tree_level = PyMem_Calloc(1, sizeof(skein_state_t));
                 if (state->next_tree_level == NULL) {
                     PyErr_SetNone(PyExc_MemoryError);
-                    return 0;
+                    goto cleanup;
                 }
                 state->next_tree_level->next_tree_level = next_level;
                 next_level = state->next_tree_level;
@@ -390,12 +413,15 @@ tree_block_processor(skein_state_t *state,
                 next_level->remaining_tree_levels = remaining_levels - 1;
             }
 
-            /* push result up to next level */
+            /* push result up to next level — propagate MemoryError instead of
+               silently swallowing it (would later manifest as SystemError). */
             WORDS_TO_BYTES(w, state->X, stateBytes);
-            tree_block_processor(next_level, w, 1, stateBytes);
+            if (!tree_block_processor(next_level, w, 1, stateBytes))
+                goto cleanup;
             if (state2) {
                 WORDS_TO_BYTES(w, state2->X, stateBytes);
-                tree_block_processor(next_level, w, 1, stateBytes);
+                if (!tree_block_processor(next_level, w, 1, stateBytes))
+                    goto cleanup;
             }
 
             /* reset state by cloning the last level */
@@ -407,7 +433,7 @@ tree_block_processor(skein_state_t *state,
             if (count < n) {
                 n = count;
                 if (count == 0)  /* guard basic_processor below */
-                    break;
+                    break;       /* cleanup will run */
             }
 
             /* if there are enough blocks, prepare a second state */
@@ -416,13 +442,12 @@ tree_block_processor(skein_state_t *state,
                     state2 = PyMem_Malloc(sizeof(skein_state_t));
                     if (state2 == NULL) {
                         PyErr_SetNone(PyExc_MemoryError);
-                        return 0;
+                        goto cleanup;
                     }
                     args = PyMem_Malloc(sizeof(struct args_t));
                     if (args == NULL) {
-                        PyMem_Free(state2);
                         PyErr_SetNone(PyExc_MemoryError);
-                        return 0;
+                        goto cleanup;
                     }
                     args->basic_processor = basic_processor;
                     args->state = state2;
@@ -430,11 +455,9 @@ tree_block_processor(skein_state_t *state,
                     args->stateBytes = stateBytes;
                     args->lock = PyThread_allocate_lock();
                     if (args->lock == NULL) {
-                        PyMem_Free(state2);
-                        PyMem_Free(args);
                         PyErr_SetString(PyExc_RuntimeError,
                                         "can't allocate lock");
-                        return 0;
+                        goto cleanup;
                     }
                 }
                 memcpy(state2->X, state->X, sizeof(state2->X));
@@ -442,20 +465,40 @@ tree_block_processor(skein_state_t *state,
                 state2->T[1] = state->T[1];
             } else {
                 if (state2 != NULL) {
+                    /* No more parallel work for this state2.  At this point
+                       the rendezvous from the previous spawn has completed
+                       (sem count = 1), so the acquire/release pair below
+                       leaves the semaphore in the released state for destroy. */
                     PyMem_Free(state2);
+                    state2 = NULL;
                     PyThread_acquire_lock(args->lock, 0);
                     PyThread_release_lock(args->lock);
                     PyThread_free_lock(args->lock);
                     PyMem_Free(args);
+                    args = NULL;
                 }
-                state2 = NULL;
             }
 
             /* hash next n blocks in new thread if possible */
             if (state2) {
                 args->data = data + (n+1)*stateBytes;
+                /* Acquire the rendezvous semaphore on the parent's behalf
+                   (sem--).  The worker will release it (sem++) after its
+                   basic_processor returns; the next iteration's acquire is
+                   the rendezvous. */
                 PyThread_acquire_lock(args->lock, 1);
-                PyThread_start_new_thread(run_basic_processor, args);
+                lock_held_by_parent = 1;
+                if (PyThread_start_new_thread(run_basic_processor, args)
+                        == PYTHREAD_INVALID_THREAD_ID) {
+                    /* Parent currently holds the lock; releasing it here
+                       lets cleanup destroy the semaphore safely. */
+                    PyThread_release_lock(args->lock);
+                    lock_held_by_parent = 0;
+                    PyErr_SetString(PyExc_RuntimeError,
+                        "tree_block_processor: failed to spawn worker thread");
+                    goto cleanup;
+                }
+                parallel_in_flight = 1;
                 count -= n;
                 /* "data" is incremented in the next loop iteration, when
                    hashing the last block (we're guaranteed to have another
@@ -463,7 +506,8 @@ tree_block_processor(skein_state_t *state,
             }
 
             /* hash n blocks */
-            basic_processor(state, data, n, stateBytes);
+            if (!basic_processor(state, data, n, stateBytes))
+                goto cleanup;
             count -= n;
             data += n*stateBytes;
         }
@@ -471,7 +515,29 @@ tree_block_processor(skein_state_t *state,
         /* incomplete node */
         state->remaining_tree_blocks = state->tree_blocks - n;
     }
-    return 1;
+    ok = 1;
+
+cleanup:
+    /* Make the rendezvous semaphore safe to destroy: it must be in the
+       released state (count = 1) before PyThread_free_lock. */
+    if (args != NULL && args->lock != NULL) {
+        if (parallel_in_flight) {
+            /* Worker still executing.  Wait for its release (sem++), then
+               our acquire takes us back to count=0; release to count=1. */
+            PyThread_acquire_lock(args->lock, 1);
+            PyThread_release_lock(args->lock);
+            lock_held_by_parent = 0;
+        } else if (lock_held_by_parent) {
+            PyThread_release_lock(args->lock);
+            lock_held_by_parent = 0;
+        }
+        PyThread_free_lock(args->lock);
+    }
+    if (args != NULL)
+        PyMem_Free(args);
+    if (state2 != NULL)
+        PyMem_Free(state2);
+    return ok;
 }
 
 
@@ -544,7 +610,9 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
     memset(sk->b, 0, sizeof(sk->b));   /* buffer for output counter */
     shift = start%sk->stateBytes;
     for (u64b_t i = start/sk->stateBytes; i<=(stop-1)/sk->stateBytes; ++i) {
-        WORDS_TO_BYTES(sk->b, &i, 4);
+        /* full 8-byte counter as required by the Skein spec (§2.3); writing
+           only 4 bytes here would let the keystream cycle every 2^32 blocks */
+        WORDS_TO_BYTES(sk->b, &i, 8);
         HASH_BLOCK(sk, sk->b, 8, OUT);
         n = stop-i*sk->stateBytes;
         if (n > sk->stateBytes)
@@ -576,7 +644,12 @@ output_hash(skeinObject *sk, u08b_t *hashVal, u64b_t start, u64b_t stop)
         sk->state.block_processor = &tree_block_processor;
     return;
 
-error:  assert(0);
+error:
+    /* output_hash currently has no fallible inner calls, so this label is
+       unreachable today.  Use Py_FatalError (instead of plain assert(0))
+       so a future regression that makes a basic_processor here fallible
+       can't silently fall through and miscompute output bytes in NDEBUG. */
+    Py_FatalError("output_hash: unreachable error path");
 }
 
 
@@ -870,6 +943,8 @@ skein_setstate(skeinObject *sk, PyObject *t)
         return 0;
     sk->state.block_processor = &tree_block_processor;
     seq = PyTuple_GetSlice(t, 8, 11);
+    if (seq == NULL)
+        return 0;  /* setstate convention: 0 = error, exception is set */
     if (!((tree_leaf=get_tree_param(seq, 0, 1, 56))
           && (tree_fan=get_tree_param(seq, 1, 1, 56))
           && (tree_max=get_tree_param(seq, 2, 2, 255)))) {
@@ -1065,6 +1140,26 @@ update_error:
     return NULL;
 }
 
+/* Maximum digest-byte allocation accepted by digest()/hexdigest().
+   StreamCipher legitimately uses digest_bits = 2**64-1 to express an
+   "unbounded" keystream, but the actual allocation per call is bounded by
+   `stop - start`, so we cap the requested *byte range* rather than
+   digest_bits itself.  1 GB is far beyond any cryptographic digest yet
+   still small enough to fail fast instead of OOM-aborting the process. */
+#define PYSKEIN_MAX_DIGEST_BYTES ((Py_ssize_t)(1ULL << 30))
+
+static int
+validate_digest_alloc(Py_ssize_t bytes_requested)
+{
+    if (bytes_requested < 0 || bytes_requested > PYSKEIN_MAX_DIGEST_BYTES) {
+        PyErr_Format(PyExc_ValueError,
+                     "digest range too large (%zd bytes, max %zd)",
+                     bytes_requested, (Py_ssize_t)PYSKEIN_MAX_DIGEST_BYTES);
+        return -1;
+    }
+    return 0;
+}
+
 PyDoc_STRVAR(skein_digest__doc__,
 "Return the digest value as a bytes object.");
 
@@ -1089,6 +1184,8 @@ skein_digest(skeinObject *self, PyObject *args)
             "digest(start, stop) has to fulfill 0<=start<=stop<=digest_size");
         return NULL;
     }
+    if (validate_digest_alloc((Py_ssize_t)(stop - start)) < 0)
+        return NULL;
 
     rv = PyBytes_FromStringAndSize(NULL, stop-start);
     if (rv == NULL)
@@ -1113,6 +1210,12 @@ skein_hexdigest(skeinObject *self, PyObject *nothing)
     PyObject *rv = NULL;
     u08b_t *hashVal = NULL;
     char *hex = NULL;
+
+    /* hexdigest allocates 3x digest_size (digest + 2x hex buffer); cap on
+       the larger of the two so a 2**64-1 digest_bits StreamCipher object
+       can't trigger a multi-EB allocation here. */
+    if (validate_digest_alloc(hexlen) < 0)
+        return NULL;
 
     if ((hashVal = PyMem_Malloc(len)) == NULL)
         return PyErr_NoMemory();
@@ -1160,7 +1263,8 @@ skein_copy(skeinObject *self, PyObject *nothing)
     if (res)
         return (PyObject *)new_obj;
     Py_DECREF(new_obj);
-    PyErr_SetString(PyExc_RuntimeError, "internal error");
+    if (!PyErr_Occurred())
+        PyErr_SetString(PyExc_RuntimeError, "internal error");
     return NULL;
 }
 
@@ -1320,10 +1424,10 @@ static PyTypeObject skeinType = {
     sizeof(skeinObject),           /* tp_basicsize */
     0,                             /* tp_itemsize */
     skein_dealloc,                 /* tp_dealloc */
-    0,                             /* tp_print */
+    0,                             /* tp_vectorcall_offset */
     0,                             /* tp_getattr */
     0,                             /* tp_setattr */
-    0,                             /* tp_compare */
+    0,                             /* tp_as_async */
     (reprfunc)skein_repr,          /* tp_repr */
     0,                             /* tp_as_number */
     0,                             /* tp_as_sequence */
@@ -1353,10 +1457,10 @@ static PyTypeObject threefishType = {
     sizeof(threefishObject),  /* tp_basicsize */
     0,                        /* tp_itemsize */
     threefish_dealloc,        /* tp_dealloc */
-    0,                        /* tp_print */
+    0,                        /* tp_vectorcall_offset */
     0,                        /* tp_getattr */
     0,                        /* tp_setattr */
-    0,                        /* tp_compare */
+    0,                        /* tp_as_async */
     0,                        /* tp_repr */
     0,                        /* tp_as_number */
     0,                        /* tp_as_sequence */
@@ -1482,14 +1586,25 @@ init_skein(skeinObject *new_obj, PyObject *args, PyObject *kw,
 
     /* check tree parameters */
     if (tree != NULL && tree != Py_None) {
+        PyObject *fast = NULL;
+
         /* check that we have a sequence of length 3, TypeError otherwise */
-        if ((seq=PySequence_Fast(tree, tree_errmsg)) == NULL)
+        if ((fast=PySequence_Fast(tree, tree_errmsg)) == NULL)
             goto error;
-        if (PySequence_Length(seq) != 3) {
-            Py_CLEAR(seq);
+        if (PySequence_Length(fast) != 3) {
+            Py_DECREF(fast);
             PyErr_SetString(PyExc_TypeError, tree_errmsg);
             goto error;
         }
+        /* PySequence_Fast returns the user's mutable list unchanged when
+           `tree` is already a list.  get_tree_param dispatches __index__,
+           which can mutate the list mid-iteration and free the items we
+           already inspected.  Snapshot to an immutable tuple so subsequent
+           __index__ callbacks cannot reach the original storage. */
+        seq = PySequence_Tuple(fast);
+        Py_DECREF(fast);
+        if (seq == NULL)
+            goto error;
         /* fill in the tree parameters */
         if (!((tree_leaf=get_tree_param(seq, 0, 1, 56))
               && (tree_fan=get_tree_param(seq, 1, 1, 56))
@@ -1583,7 +1698,9 @@ error:
         PyBuffer_Release(&kid);
     if (nonce.buf != NULL)
         PyBuffer_Release(&nonce);
-    new_obj->state.next_tree_level = NULL;  /* otherwise dealloc gets problems */
+    /* Do NOT clobber next_tree_level here.  new_skein_object initialises it
+       to NULL, and if init_tree succeeded we want skein_dealloc to walk and
+       free the chain (which holds chaining-state material). */
     return 0;
 }
 
@@ -1626,7 +1743,11 @@ skein__from_state(PyObject *self, PyObject *args)
     if (skein_setstate(new_obj, t))
         return (PyObject *)new_obj;
     Py_DECREF(new_obj);
-    PyErr_SetString(PyExc_ValueError, "invalid state");
+    /* skein_setstate may have set a precise exception (e.g. TypeError when
+       a tuple entry has the wrong type); only fall back to the generic
+       ValueError when no exception is already pending. */
+    if (!PyErr_Occurred())
+        PyErr_SetString(PyExc_ValueError, "invalid state");
     return NULL;
 }
 
