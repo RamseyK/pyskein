@@ -1,6 +1,6 @@
 # PySkein
 
-A modern fork of [pyskein](https://pypi.org/project/pyskein/) that fixes numerous bugs, updates for modern Python 3.14 (non and free-threaded), and includes binary builds for most platforms.
+**This is a modern fork of [pyskein](https://pypi.org/project/pyskein/) that fixes numerous bugs, updates for modern Python 3.14 (non and free-threaded), and includes binary builds for most platforms.**
 
 PySkein is a Python native extension implementation the [Skein hash algorithm](<https://en.wikipedia.org/wiki/Skein_(hash_function)>). Skein was one of the five finalists of the NIST SHA-3 Competition. While ultimately not selected as the winner of that competition, Skein may still be useful as an alternative hash algorithm, offering flexible hashing modes with various parameters. PySkein provides all features of Skein through a Pythonic interface and is released as free software under the `GNU General Public License`.
 

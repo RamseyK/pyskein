@@ -25,6 +25,7 @@ else:
         "-Wall", "-Wextra", "-Wno-sign-compare",
         "-Wno-missing-field-initializers", "-Wformat", "-Wformat=2",
         "-Wimplicit-fallthrough",
+        "-Wno-unused-parameter",
         # Position-independent
         "-fPIE",
         "-fno-delete-null-pointer-checks",
@@ -36,6 +37,6 @@ else:
 ext = Extension("_skein",
                 sources=["skein/threefish.c", "skein/_skeinmodule.c"],
                 include_dirs=["skein"],
-                extra_compiler_args=extra_compile_args,
+                extra_compile_args=extra_compile_args,
                 extra_link_args=[])
 setup(ext_modules=[ext])
