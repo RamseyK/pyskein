@@ -729,9 +729,8 @@ skein_getstate(skeinObject *sk)
     Py_ssize_t i = 0;
     u64b_t x = 0;
 
-    /* Build the state as a list (grows freely, no private _PyTuple_Resize),
-       then convert to a tuple at the end. Each APPEND_NEW consumes its
-       argument's reference on both success and failure paths. */
+    /* Build the state as a list then convert to a tuple at the end so we do not have to worry about resizing.
+       Each APPEND_NEW consumes its argument's reference on both success and failure paths. */
 #define APPEND_NEW(expr) \
     do { \
         if ((item = (expr)) == NULL) goto fail; \

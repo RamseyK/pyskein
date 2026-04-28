@@ -25,6 +25,7 @@ else:
         "-Wall", "-Wextra", "-Wno-sign-compare",
         "-Wno-missing-field-initializers", "-Wformat", "-Wformat=2",
         "-Wimplicit-fallthrough",
+        "-Wno-unused-parameter",
         # Position-independent
         "-fPIE",
         "-fno-delete-null-pointer-checks",
