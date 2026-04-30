@@ -228,3 +228,12 @@ static inline void BYTES_TO_WORDS(u64b_t *dst, const u08b_t *src, size_t wCnt) {
 #define BYTES_TO_WORDS(dst64, src08, wCnt) memcpy(dst64, src08, 8*(wCnt))
 #endif
 
+
+/* Maximum digest-byte allocation accepted by digest()/hexdigest().
+   StreamCipher legitimately uses digest_bits = 2**64-1 to express an
+   "unbounded" keystream, but the actual allocation per call is bounded by
+   `stop - start`, so we cap the requested *byte range* rather than
+   digest_bits itself.  1 GB is far beyond any cryptographic digest yet
+   still small enough to fail fast instead of OOM-aborting the process. */
+#define PYSKEIN_MAX_DIGEST_BYTES ((u64b_t)(1ULL << 30))
+

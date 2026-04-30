@@ -1140,21 +1140,17 @@ update_error:
     return NULL;
 }
 
-/* Maximum digest-byte allocation accepted by digest()/hexdigest().
-   StreamCipher legitimately uses digest_bits = 2**64-1 to express an
-   "unbounded" keystream, but the actual allocation per call is bounded by
-   `stop - start`, so we cap the requested *byte range* rather than
-   digest_bits itself.  1 GB is far beyond any cryptographic digest yet
-   still small enough to fail fast instead of OOM-aborting the process. */
-#define PYSKEIN_MAX_DIGEST_BYTES ((Py_ssize_t)(1ULL << 30))
-
+/* Validate in u64b_t (64-bit) so a multi-GB request from digest_bits=2**64-1
+   can't wrap when truncated to Py_ssize_t on 32-bit platforms before the
+   cap is even checked. */
 static int
-validate_digest_alloc(Py_ssize_t bytes_requested)
+validate_digest_alloc(u64b_t bytes_requested)
 {
-    if (bytes_requested < 0 || bytes_requested > PYSKEIN_MAX_DIGEST_BYTES) {
+    if (bytes_requested > PYSKEIN_MAX_DIGEST_BYTES) {
         PyErr_Format(PyExc_ValueError,
-                     "digest range too large (%zd bytes, max %zd)",
-                     bytes_requested, (Py_ssize_t)PYSKEIN_MAX_DIGEST_BYTES);
+                     "digest range too large (%llu bytes, max %llu)",
+                     (unsigned long long)bytes_requested,
+                     (unsigned long long)PYSKEIN_MAX_DIGEST_BYTES);
         return -1;
     }
     return 0;
@@ -1184,10 +1180,12 @@ skein_digest(skeinObject *self, PyObject *args)
             "digest(start, stop) has to fulfill 0<=start<=stop<=digest_size");
         return NULL;
     }
-    if (validate_digest_alloc((Py_ssize_t)(stop - start)) < 0)
+    /* Validate in u64b_t before any narrowing: on 32-bit Py_ssize_t is
+       only 32 bits, so a multi-GB (stop-start) would otherwise wrap. */
+    if (validate_digest_alloc(stop - start) < 0)
         return NULL;
 
-    rv = PyBytes_FromStringAndSize(NULL, stop-start);
+    rv = PyBytes_FromStringAndSize(NULL, (Py_ssize_t)(stop - start));
     if (rv == NULL)
         return NULL;
     if (start < stop) {
@@ -1204,8 +1202,13 @@ PyDoc_STRVAR(skein_hexdigest__doc__,
 static PyObject *
 skein_hexdigest(skeinObject *self, PyObject *nothing)
 {
-    Py_ssize_t len = (self->digestBits-1)/8+1;
-    Py_ssize_t hexlen = 2*len;
+    /* Compute lengths in u64b_t first.  digestBits up to 2**64-1 means the
+       raw len/hexlen can exceed Py_ssize_t — especially on 32-bit, where
+       Py_ssize_t is only 32 bits.  Validate the cap in u64b_t, then narrow. */
+    u64b_t full_len = (self->digestBits-1)/8+1;
+    u64b_t full_hexlen = 2 * full_len;
+    Py_ssize_t len = 0;
+    Py_ssize_t hexlen = 0;
     char nib = 0;
     PyObject *rv = NULL;
     u08b_t *hashVal = NULL;
@@ -1214,8 +1217,12 @@ skein_hexdigest(skeinObject *self, PyObject *nothing)
     /* hexdigest allocates 3x digest_size (digest + 2x hex buffer); cap on
        the larger of the two so a 2**64-1 digest_bits StreamCipher object
        can't trigger a multi-EB allocation here. */
-    if (validate_digest_alloc(hexlen) < 0)
+    if (validate_digest_alloc(full_hexlen) < 0)
         return NULL;
+    /* Cap-validated; safe to narrow.  PYSKEIN_MAX_DIGEST_BYTES (1 GB) fits
+       in Py_ssize_t on 32-bit (Py_ssize_t max is 2 GB). */
+    len = (Py_ssize_t)full_len;
+    hexlen = (Py_ssize_t)full_hexlen;
 
     if ((hashVal = PyMem_Malloc(len)) == NULL)
         return PyErr_NoMemory();
@@ -1225,7 +1232,7 @@ skein_hexdigest(skeinObject *self, PyObject *nothing)
     }
 
     SKEIN_LOCK(self);
-    output_hash(self, hashVal, 0, len);
+    output_hash(self, hashVal, 0, full_len);
     SKEIN_UNLOCK(self);
     for (Py_ssize_t i = 0, j = 0; i < len; i++) {
         nib = (hashVal[i] >> 4) & 0x0F;
